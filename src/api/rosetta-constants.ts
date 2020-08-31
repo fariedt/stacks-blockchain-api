@@ -122,3 +122,9 @@ export const RosettaErrors = {
     retriable: true,
   },
 };
+
+export interface RosettaError {
+  code: number;
+  message: string;
+  retriable: boolean;
+}

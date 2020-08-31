@@ -253,7 +253,7 @@ export interface DataStore extends DataStoreEventEmitter {
     offset: number;
   }): Promise<{ results: DbBlock[]; total: number }>;
   getBlockTxs(indexBlockHash: string): Promise<{ results: string[] }>;
-
+  getCurrentBlock(): Promise<FoundOrNot<DbBlock>>;
   getMempoolTx(txId: string): Promise<FoundOrNot<DbMempoolTx>>;
   getMempoolTxList(args: {
     limit: number;
@@ -311,6 +311,13 @@ export interface DataStore extends DataStoreEventEmitter {
   searchPrincipal(args: { principal: string }): Promise<FoundOrNot<DbSearchResult>>;
 
   insertFaucetRequest(faucetRequest: DbFaucetRequest): Promise<void>;
+
+  getStxBalanceAtBlock(
+    stxAddress: string,
+    blockHeight: number
+  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }>;
+
+  getBlockByHeight(block_height: number): Promise<FoundOrNot<DbBlock>>;
 }
 
 export function getAssetEventId(event_index: number, event_tx_id: string): string {
