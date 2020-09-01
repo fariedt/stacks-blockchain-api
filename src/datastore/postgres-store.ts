@@ -746,7 +746,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       } finally {
         client.end(() => {});
       }
-    } while (initTimer.getElapsed() < 10000);
+    } while (initTimer.getElapsed() < Number.MAX_SAFE_INTEGER);
     if (!connectionOkay) {
       connectionError = connectionError ?? new Error('Error connecting to database');
       throw connectionError;

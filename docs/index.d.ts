@@ -210,6 +210,110 @@ export interface NetworkBlockTimesResponse {
 }
 
 /**
+ * An AccountBalanceRequest is utilized to make a balance request on the /account/balance endpoint. If the block_identifier is populated, a historical balance query should be performed.
+ */
+export interface RosettaAccountBalanceRequest {
+  network_identifier: NetworkIdentifier;
+  account_identifier: RosettaAccount;
+  block_identifier?: RosettaPartialBlockIdentifier;
+}
+
+/**
+ * An AccountBalanceResponse is returned on the /account/balance endpoint. If an account has a balance for each AccountIdentifier describing it (ex: an ERC-20 token balance on a few smart contracts), an account balance request must be made with each AccountIdentifier.
+ */
+export interface RosettaAccountBalanceResponse {
+  block_identifier: RosettaBlockIdentifier;
+  /**
+   * A single account balance may have multiple currencies
+   */
+  balances: RosettaAmount[];
+  /**
+   * If a blockchain is UTXO-based, all unspent Coins owned by an account_identifier should be returned alongside the balance. It is highly recommended to populate this field so that users of the Rosetta API implementation don't need to maintain their own indexer to track their UTXOs.
+   */
+  coins?: RosettaCoin[];
+  /**
+   * Account-based blockchains that utilize a nonce or sequence number should include that number in the metadata. This number could be unique to the identifier or global across the account address.
+   */
+  metadata?: {
+    sequence_number: number;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * A BlockRequest is utilized to make a block request on the /block endpoint.
+ */
+export interface RosettaBlockRequest {
+  network_identifier: NetworkIdentifier;
+  block_identifier: RosettaPartialBlockIdentifier;
+}
+
+/**
+ * A BlockResponse includes a fully-populated block or a partially-populated block with a list of other transactions to fetch (other_transactions). As a result of the consensus algorithm of some blockchains, blocks can be omitted (i.e. certain block indexes can be skipped). If a query for one of these omitted indexes is made, the response should not include a Block object. It is VERY important to note that blocks MUST still form a canonical, connected chain of blocks where each block has a unique index. In other words, the PartialBlockIdentifier of a block after an omitted block should reference the last non-omitted block.
+ */
+export interface RosettaBlockResponse {
+  block?: RosettaBlock;
+  /**
+   * Some blockchains may require additional transactions to be fetched that weren't returned in the block response (ex: block only returns transaction hashes). For blockchains with a lot of transactions in each block, this can be very useful as consumers can concurrently fetch all transactions returned.
+   */
+  other_transactions?: OtherTransactionIdentifier[];
+}
+
+/**
+ * A BlockTransactionRequest is used to fetch a Transaction included in a block that is not returned in a BlockResponse.
+ */
+export interface RosettaBlockTransactionRequest {
+  network_identifier: NetworkIdentifier;
+  block_identifier: RosettaBlockIdentifier;
+  transaction_identifier: TransactionIdentifier;
+}
+
+/**
+ * A BlockTransactionResponse contains information about a block transaction.
+ */
+export interface RosettaBlockTransactionResponse {
+  transaction: RosettaTransaction;
+}
+
+/**
+ * Get all Transaction Identifiers in the mempool
+ */
+export interface RosettaMempoolRequest {
+  network_identifier: NetworkIdentifier;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * A MempoolResponse contains all transaction identifiers in the mempool for a particular network_identifier.
+ */
+export interface RosettaMempoolResponse {
+  transaction_identifiers: TransactionIdentifier[];
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * A MempoolTransactionRequest is utilized to retrieve a transaction from the mempool.
+ */
+export interface RosettaMempoolTransactionRequest {
+  network_identifier: NetworkIdentifier;
+  transaction_identifier: TransactionIdentifier;
+}
+
+/**
+ * A MempoolTransactionResponse contains an estimate of a mempool transaction. It may not be possible to know the full impact of a transaction in the mempool (ex: fee paid).
+ */
+export interface RosettaMempoolTransactionResponse {
+  transaction: RosettaTransaction;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * This endpoint returns a list of NetworkIdentifiers that the Rosetta server supports.
  */
 export interface RosettaNetworkListRequest {
@@ -232,7 +336,7 @@ export interface RosettaNetworkListResponse {
 }
 
 /**
- * TThis endpoint returns the version information and allowed network-specific types for a NetworkIdentifier. Any NetworkIdentifier returned by /network/list should be accessible here. Because options are retrievable in the context of a NetworkIdentifier, it is possible to define unique options for each network.
+ * This endpoint returns the version information and allowed network-specific types for a NetworkIdentifier. Any NetworkIdentifier returned by /network/list should be accessible here. Because options are retrievable in the context of a NetworkIdentifier, it is possible to define unique options for each network.
  */
 export interface RosettaOptionsRequest {
   network_identifier: NetworkIdentifier;
@@ -706,9 +810,6 @@ export interface RosettaAmount {
    */
   value: string;
   currency: RosettaCurrency;
-  /**
-   * An explanation about the purpose of this instance.
-   */
   metadata?: {
     [k: string]: unknown | undefined;
   };
@@ -726,6 +827,50 @@ export interface RosettaBlockIdentifier {
    * Block hash
    */
   hash: string;
+}
+
+/**
+ * Blocks contain an array of Transactions that occurred at a particular BlockIdentifier. A hard requirement for blocks returned by Rosetta implementations is that they MUST be inalterable: once a client has requested and received a block identified by a specific BlockIndentifier, all future calls for that same BlockIdentifier must return the same block contents.
+ */
+export interface RosettaBlock {
+  block_identifier: RosettaBlockIdentifier;
+  parent_block_identifier: RosettaParentBlockIdentifier;
+  /**
+   * The timestamp of the block in milliseconds since the Unix Epoch. The timestamp is stored in milliseconds because some blockchains produce blocks more often than once a second.
+   */
+  timestamp: number;
+  /**
+   * All the transactions in the block
+   */
+  transactions: RosettaTransaction[];
+  /**
+   * meta data
+   */
+  metadata?: {
+    transactions_root: string;
+    difficulty: string;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * CoinChange is used to represent a change in state of a some coin identified by a coin_identifier. This object is part of the Operation model and must be populated for UTXO-based blockchains. Coincidentally, this abstraction of UTXOs allows for supporting both account-based transfers and UTXO-based transfers on the same blockchain (when a transfer is account-based, don't populate this model).
+ */
+export interface RosettaCoinChange {
+  /**
+   * CoinIdentifier uniquely identifies a Coin.
+   */
+  coin_identifier: {
+    /**
+     * Identifier should be populated with a globally unique identifier of a Coin. In Bitcoin, this identifier would be transaction_hash:index.
+     */
+    identifier: string;
+    [k: string]: unknown | undefined;
+  };
+  /**
+   * CoinActions are different state changes that a Coin can undergo. When a Coin is created, it is coin_created. When a Coin is spent, it is coin_spent. It is assumed that a single Coin cannot be created or spent more than once.
+   */
+  coin_action: "coin_created" | "coin_spent";
 }
 
 /**
@@ -840,7 +985,7 @@ export interface NetworkIdentifier {
 }
 
 /**
- * AA Peer is a representation of a node's peer.
+ * A Peer is a representation of a node's peer.
  */
 export interface RosettaPeers {
   /**
@@ -870,6 +1015,20 @@ export interface RosettaOldestBlockIdentifier {
 }
 
 /**
+ * The operation_identifier uniquely identifies an operation within a transaction.
+ */
+export interface RosettaOperationIdentifier {
+  /**
+   * The operation index is used to ensure each operation has a unique identifier within a transaction. This index is only relative to the transaction and NOT GLOBAL. The operations in each transaction should start from index 0. To clarify, there may not be any notion of an operation index in the blockchain being described.
+   */
+  index: number;
+  /**
+   * Some blockchains specify an operation index that is essential for client use. For example, Bitcoin uses a network_index to identify which UTXO was used in a transaction. network_index should not be populated if there is no notion of an operation index in a blockchain (typically most account-based blockchains).
+   */
+  network_index?: number;
+}
+
+/**
  * OperationStatus is utilized to indicate which Operation status are considered successful.
  */
 export interface RosettaOperationStatus {
@@ -884,7 +1043,92 @@ export interface RosettaOperationStatus {
 }
 
 /**
- * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
+ * Operations contain all balance-changing information within a transaction. They are always one-sided (only affect 1 AccountIdentifier) and can succeed or fail independently from a Transaction.
+ */
+export interface RosettaOperation {
+  operation_identifier: RosettaOperationIdentifier;
+  /**
+   * Restrict referenced related_operations to identifier indexes < the current operation_identifier.index. This ensures there exists a clear DAG-structure of relations. Since operations are one-sided, one could imagine relating operations in a single transfer or linking operations in a call tree.
+   */
+  related_operations?: RosettaRelatedOperation[];
+  /**
+   * The network-specific type of the operation. Ensure that any type that can be returned here is also specified in the NetworkStatus. This can be very useful to downstream consumers that parse all block data.
+   */
+  type: string;
+  /**
+   * The network-specific status of the operation. Status is not defined on the transaction object because blockchains with smart contracts may have transactions that partially apply. Blockchains with atomic transactions (all operations succeed or all operations fail) will have the same status for each operation.
+   */
+  status: string;
+  account?: RosettaAccount;
+  amount?: RosettaAmount;
+  coin_change?: RosettaCoinChange;
+  /**
+   * Operations Meta Data
+   */
+  metadata?: {
+    /**
+     * The asm
+     */
+    asm: string;
+    /**
+     * The hex
+     */
+    hex: string;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * The transaction_identifier uniquely identifies a transaction in a particular network and block or in the mempool.
+ */
+export interface OtherTransactionIdentifier {
+  /**
+   * Any transactions that are attributable only to a block (ex: a block event) should use the hash of the block as the identifier.
+   */
+  hash: string;
+}
+
+/**
+ * The block_identifier uniquely identifies a block in a particular network.
+ */
+export interface RosettaParentBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index: number;
+  /**
+   * Block hash
+   */
+  hash: string;
+}
+
+/**
+ * When fetching data by BlockIdentifier, it may be possible to only specify the index or hash. If neither property is specified, it is assumed that the client is making a request at the current block.
+ */
+export interface RosettaPartialBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index?: number;
+  /**
+   * Block hash
+   */
+  hash?: string;
+}
+
+/**
+ * Restrict referenced related_operations to identifier indexes < the current operation_identifier.index. This ensures there exists a clear DAG-structure of relations. Since operations are one-sided, one could imagine relating operations in a single transfer or linking operations in a call tree.
+ */
+export interface RosettaRelatedOperation {
+  /**
+   * Describes the index of related operation.
+   */
+  index?: number;
+  operation_identifier: RosettaOperationIdentifier;
+}
+
+/**
+ * An account may have state specific to a contract address (ERC-20 token) and/or a stake (delegated balance). The sub_account_identifier should specify which state (if applicable) an account instantiation refers to.
  */
 export interface RosettaSubAccount {
   /**
@@ -892,7 +1136,7 @@ export interface RosettaSubAccount {
    */
   address: string;
   /**
-   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
+   * If the SubAccount address is not sufficient to uniquely specify a SubAccount, any other identifying information can be stored here. It is important to note that two SubAccounts with identical addresses but differing metadata will not be considered equal by clients.
    */
   metadata?: {
     [k: string]: unknown | undefined;
@@ -915,6 +1159,41 @@ export interface RosettaSyncStatus {
    * Stage is the phase of the sync process.
    */
   stage?: string;
+}
+
+/**
+ * The transaction_identifier uniquely identifies a transaction in a particular network and block or in the mempool.
+ */
+export interface TransactionIdentifier {
+  /**
+   * Any transactions that are attributable only to a block (ex: a block event) should use the hash of the block as the identifier.
+   */
+  hash: string;
+}
+
+/**
+ * Transactions contain an array of Operations that are attributable to the same TransactionIdentifier.
+ */
+export interface RosettaTransaction {
+  transaction_identifier: TransactionIdentifier;
+  /**
+   * List of operations
+   */
+  operations: RosettaOperation[];
+  /**
+   * Transactions that are related to other transactions (like a cross-shard transaction) should include the tranaction_identifier of these transactions in the metadata.
+   */
+  metadata?: {
+    /**
+     * The Size
+     */
+    size: number;
+    /**
+     * The locktime
+     */
+    lockTime: number;
+    [k: string]: unknown | undefined;
+  };
 }
 
 export type TransactionEventAssetType = "transfer" | "mint" | "burn";
