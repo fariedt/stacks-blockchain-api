@@ -1,49 +1,39 @@
 import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
-import { DataStore } from '../../../datastore/common';
+import { DataStore, DbBlock } from '../../../datastore/common';
 import {
-  RosettaError,
   NetworkIdentifier,
   RosettaAccount,
+  RosettaBlockIdentifier,
+  RosettaAccountBalanceResponse,
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from '../../rosetta-constants';
-import { isValidC32Address, has0xPrefix } from '../../../helpers';
+import { has0xPrefix, FoundOrNot } from '../../../helpers';
+import { isValidNetworkIdentifier, isValidAccountIdentifier } from '../../rosetta-validate';
 
-function isValidNetworkIdentifier(networkIdentifier: NetworkIdentifier): RosettaError | true {
-  if (!networkIdentifier) {
-    return RosettaErrors.emptyNetworkIdentifier;
-  }
-
-  if (!networkIdentifier.blockchain) {
-    return RosettaErrors.emptyBlockchain;
-  }
-
-  if (!networkIdentifier.network) {
-    return RosettaErrors.emptyBlockchain;
-  }
-
-  if (networkIdentifier.blockchain != RosettaConstants.blockchain) {
-    return RosettaErrors.invalidBlockchain;
-  }
-
-  if (networkIdentifier.network != RosettaConstants.network) {
-    return RosettaErrors.invalidNetwork;
-  }
-
-  return true;
+interface BalanceParams {
+  db: DataStore;
+  address: string;
+  blockIndex?: number;
+  blockHeight?: number;
 }
 
-function isValidAccountIdentifier(accountIdentifier: RosettaAccount): RosettaError | true {
-  if (!accountIdentifier) {
-    return RosettaErrors.emptyAccountIdentifier;
+async function getBalance({
+  db,
+  address,
+  blockIndex,
+  blockHeight,
+}: BalanceParams): Promise<string> {
+  let result;
+  if (blockIndex) {
+    result = await db.getStxBalanceAtBlock(address, blockIndex);
+  } else if (blockHeight) {
+    result = await db.getStxBalanceAtBlock(address, blockHeight);
+  } else {
+    result = await db.getStxBalance(address);
   }
 
-  const stxAddress = accountIdentifier.address;
-  if (!isValidC32Address(stxAddress)) {
-    return RosettaErrors.invalidAccount;
-  }
-
-  return true;
+  return result.balance.toString();
 }
 
 export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
@@ -51,27 +41,26 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
   router.use(express.json());
 
   router.postAsync('/balance', async (req, res) => {
-    const networkIdentifier = req.body.network_identifier;
+    const networkIdentifier: NetworkIdentifier = req.body.network_identifier;
     const validNetworkIdentifier = isValidNetworkIdentifier(networkIdentifier);
     if (validNetworkIdentifier !== true) {
       res.status(400).json(validNetworkIdentifier);
     }
 
-    const accountIdentifier = req.body.account_identifier;
+    const accountIdentifier: RosettaAccount = req.body.account_identifier;
     const validAccountIdentifier = isValidAccountIdentifier(accountIdentifier);
     if (validAccountIdentifier !== true) {
       res.status(400).json(validAccountIdentifier);
     }
 
-    const blockIdentifier = req.body.block_identifier;
-    let balance: bigint = BigInt(0);
+    const blockIdentifier: RosettaBlockIdentifier = req.body.block_identifier;
+    let balance: string = '';
     let index: number = 0;
     let hash: string = '';
 
     if (blockIdentifier == null) {
-      const result = await db.getStxBalance(accountIdentifier.address);
-      balance = result.balance;
-      const block = await db.getCurrentBlock();
+      balance = await getBalance({ db, address: accountIdentifier.address });
+      const block: FoundOrNot<DbBlock> = await db.getCurrentBlock();
       if (block.found) {
         index = block.result.block_height;
         hash = block.result.block_hash;
@@ -79,11 +68,11 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
         res.status(400).json(RosettaErrors.blockNotFound);
       }
     } else if (blockIdentifier.index) {
-      const result = await db.getStxBalanceAtBlock(
-        accountIdentifier.address,
-        blockIdentifier.index
-      );
-      balance = result.balance;
+      balance = await getBalance({
+        db,
+        address: accountIdentifier.address,
+        blockIndex: blockIdentifier.index,
+      });
       index = blockIdentifier.index;
       const block = await db.getBlockByHeight(index);
       if (block.found) {
@@ -98,11 +87,11 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
       }
       const block = await db.getBlock(blockHash);
       if (block.found) {
-        const result = await db.getStxBalanceAtBlock(
-          accountIdentifier.address,
-          block.result.block_height
-        );
-        balance = result.balance;
+        balance = await getBalance({
+          db,
+          address: accountIdentifier.address,
+          blockHeight: block.result.block_height,
+        });
         index = block.result.block_height;
         hash = block.result.block_hash;
       } else {
@@ -112,7 +101,27 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
       res.status(400).json(RosettaErrors.invalidBlockIdentifier);
     }
 
-    res.json({ status: 'ready' });
+    const response: RosettaAccountBalanceResponse = {
+      block_identifier: {
+        index,
+        hash,
+      },
+      balances: [
+        {
+          value: balance,
+          currency: {
+            symbol: RosettaConstants.symbol,
+            decimals: RosettaConstants.decimals,
+          },
+        },
+      ],
+      coins: [],
+      metadata: {
+        sequence_number: 0,
+      },
+    };
+
+    res.json(response);
   });
 
   return router;
