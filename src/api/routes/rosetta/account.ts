@@ -11,23 +11,9 @@ import { RosettaErrors, RosettaConstants } from '../../rosetta-constants';
 import { has0xPrefix, FoundOrNot } from '../../../helpers';
 import { isValidNetworkIdentifier, isValidAccountIdentifier } from '../../rosetta-validate';
 
-interface BalanceParams {
-  db: DataStore;
-  address: string;
-  blockIndex?: number;
-  blockHeight?: number;
-}
-
-async function getBalance({
-  db,
-  address,
-  blockIndex,
-  blockHeight,
-}: BalanceParams): Promise<string> {
+async function getBalance(db: DataStore, address: string, blockHeight?: number): Promise<string> {
   let result;
-  if (blockIndex) {
-    result = await db.getStxBalanceAtBlock(address, blockIndex);
-  } else if (blockHeight) {
+  if (blockHeight) {
     result = await db.getStxBalanceAtBlock(address, blockHeight);
   } else {
     result = await db.getStxBalance(address);
@@ -59,7 +45,7 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
     let hash: string = '';
 
     if (blockIdentifier == null) {
-      balance = await getBalance({ db, address: accountIdentifier.address });
+      balance = await getBalance(db, accountIdentifier.address);
       const block: FoundOrNot<DbBlock> = await db.getCurrentBlock();
       if (block.found) {
         index = block.result.block_height;
@@ -68,11 +54,7 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
         res.status(400).json(RosettaErrors.blockNotFound);
       }
     } else if (blockIdentifier.index) {
-      balance = await getBalance({
-        db,
-        address: accountIdentifier.address,
-        blockIndex: blockIdentifier.index,
-      });
+      balance = await getBalance(db, accountIdentifier.address, blockIdentifier.index);
       index = blockIdentifier.index;
       const block = await db.getBlockByHeight(index);
       if (block.found) {
@@ -87,11 +69,7 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
       }
       const block = await db.getBlock(blockHash);
       if (block.found) {
-        balance = await getBalance({
-          db,
-          address: accountIdentifier.address,
-          blockHeight: block.result.block_height,
-        });
+        balance = await getBalance(db, accountIdentifier.address, block.result.block_height);
         index = block.result.block_height;
         hash = block.result.block_hash;
       } else {
