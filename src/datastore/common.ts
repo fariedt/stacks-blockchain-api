@@ -330,8 +330,6 @@ export interface DataStore extends DataStoreEventEmitter {
     stxAddress: string,
     blockHeight: number
   ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }>;
-
-  getBlockByHeight(block_height: number): Promise<FoundOrNot<DbBlock>>;
 }
 
 export function getAssetEventId(event_index: number, event_tx_id: string): string {
