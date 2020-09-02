@@ -853,7 +853,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     return { found: true, result: block } as const;
   }
 
-  async getCurrentBlock(): Promise<FoundOrNot<DbBlock>> {
+  async getCurrentBlock() {
     const result = await this.pool.query<BlockQueryResult>(
       `
       SELECT ${BLOCK_COLUMNS}

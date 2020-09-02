@@ -10,7 +10,6 @@ import {
   RosettaRequestType,
 } from './rosetta-constants';
 import * as T from '@blockstack/stacks-blockchain-api-types';
-import { NetworkIdentifier, RosettaAccount } from '@blockstack/stacks-blockchain-api-types';
 
 export interface ValidSchema {
   valid: boolean;
