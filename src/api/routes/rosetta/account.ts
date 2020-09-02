@@ -9,7 +9,7 @@ import {
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from '../../rosetta-constants';
 import { has0xPrefix, FoundOrNot } from '../../../helpers';
-import { isValidNetworkIdentifier, isValidAccountIdentifier } from '../../rosetta-validate';
+import { rosettaValidateRequest, ValidSchema, makeRosettaError } from '../../rosetta-validate';
 
 async function getBalance(db: DataStore, address: string, blockHeight?: number): Promise<string> {
   let result;
@@ -27,18 +27,13 @@ export function createRosettaAccountRouter(db: DataStore): RouterWithAsync {
   router.use(express.json());
 
   router.postAsync('/balance', async (req, res) => {
-    const networkIdentifier: NetworkIdentifier = req.body.network_identifier;
-    const validNetworkIdentifier = isValidNetworkIdentifier(networkIdentifier);
-    if (validNetworkIdentifier !== true) {
-      res.status(400).json(validNetworkIdentifier);
+    const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
+    if (!valid.valid) {
+      res.status(400).json(makeRosettaError(valid));
+      return;
     }
 
     const accountIdentifier: RosettaAccount = req.body.account_identifier;
-    const validAccountIdentifier = isValidAccountIdentifier(accountIdentifier);
-    if (validAccountIdentifier !== true) {
-      res.status(400).json(validAccountIdentifier);
-    }
-
     const blockIdentifier: RosettaBlockIdentifier = req.body.block_identifier;
     let balance: string = '';
     let index: number = 0;
