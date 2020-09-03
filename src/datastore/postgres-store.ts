@@ -275,6 +275,12 @@ interface UpdatedEntities {
   };
 }
 
+interface RosettaBalance {
+  balance: bigint;
+  totalSent: bigint;
+  totalReceived: bigint;
+}
+
 export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitter })
   implements DataStore {
   readonly pool: Pool;
@@ -2082,10 +2088,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     return { results };
   }
 
-  async getStxBalanceAtBlock(
-    stxAddress: string,
-    blockHeight: number
-  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }> {
+  async getStxBalanceAtBlock(stxAddress: string, blockHeight: number): Promise<RosettaBalance> {
     const result = await this.pool.query<{
       credit_total: string | null;
       debit_total: string | null;
@@ -2121,11 +2124,12 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     const totalSent = BigInt(result.rows[0].debit_total ?? 0);
     const totalReceived = BigInt(result.rows[0].credit_total ?? 0);
     const balanceTotal = totalReceived - totalSent - totalFees;
-    return {
+    const balance: RosettaBalance = {
       balance: balanceTotal,
       totalSent,
       totalReceived,
     };
+    return balance;
   }
 
   async close(): Promise<void> {
