@@ -1,12 +1,26 @@
 import { DbMempoolTx, DbTx } from './datastore/common';
 import { getTxTypeString, getTxStatusString } from './api/controllers/db-controller';
 
+import * as btc from 'bitcoinjs-lib';
+import * as c32check from 'c32check';
+
 import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from './helpers';
 import { RosettaOperation } from '@blockstack/stacks-blockchain-api-types';
 
 enum CoinAction {
   CoinSpent = 'coin_spent',
   CoinCreated = 'coin_created',
+}
+
+export function publicKeyToAddress(publicKey: string) {
+  const publicKeyBuffer = Buffer.from(publicKey, 'hex');
+  const publicKeyHash160 = btc.crypto.hash160(publicKeyBuffer);
+  const address = btc.address.toBase58Check(publicKeyHash160, 0x00);
+  return address;
+}
+
+export function convertToSTXAddress(btcAddress: string) {
+  return c32check.b58ToC32(btcAddress);
 }
 
 export function getOperations(tx: DbMempoolTx | DbTx): RosettaOperation[] {
