@@ -202,4 +202,16 @@ export const RosettaSchemas: Record<string, SchemaFiles> = {
     response:
       '@blockstack/stacks-blockchain-api-types/api/rosetta/rosetta-account-response.schema.json',
   },
+  '/rosetta/v1/construction/derive': {
+    request:
+      '@blockstack/stacks-blockchain-api-types/api/rosetta/rosetta-construction-derive-request.schema.json',
+    response:
+      '@blockstack/stacks-blockchain-api-types/api/rosetta/rosetta-construction-derive-response.schema.json',
+  },
+  '/rosetta/v1/construction/preprocess': {
+    request:
+      '@blockstack/stacks-blockchain-api-types/api/rosetta/rosetta-construction-preprocess-request.schema.json',
+    response:
+      '@blockstack/stacks-blockchain-api-types/api/rosetta/rosetta-construction-preprocess-response.schema.json',
+  },
 };

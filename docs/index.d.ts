@@ -276,6 +276,59 @@ export interface RosettaBlockTransactionResponse {
 }
 
 /**
+ * Network is provided in the request because some blockchains have different address formats for different networks
+ */
+export interface RosettaConstructionDeriveRequest {
+  network_identifier: NetworkIdentifier;
+  public_key: RosettaPublicKey;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * ConstructionDeriveResponse is returned by the /construction/derive endpoint.
+ */
+export interface RosettaConstructionDeriveResponse {
+  /**
+   * Address in network-specific format.
+   */
+  address: string;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * ConstructionPreprocessRequest is passed to the /construction/preprocess endpoint so that a Rosetta implementation can determine which metadata it needs to request for construction
+ */
+export interface RosettaConstructionPreprocessRequest {
+  network_identifier: NetworkIdentifier;
+  operations: RosettaOperation[];
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+  max_fee?: RosettaMaxFeeAmount;
+  /**
+   *  The caller can also provide a suggested fee multiplier to indicate that the suggested fee should be scaled. This may be used to set higher fees for urgent transactions or to pay lower fees when there is less urgency. It is assumed that providing a very low multiplier (like 0.0001) will never lead to a transaction being created with a fee less than the minimum network fee (if applicable). In the case that the caller provides both a max fee and a suggested fee multiplier, the max fee will set an upper bound on the suggested fee (regardless of the multiplier provided).
+   */
+  suggested_fee_multiplier?: number;
+}
+
+/**
+ * ConstructionPreprocessResponse contains options that will be sent unmodified to /construction/metadata. If it is not necessary to make a request to /construction/metadata, options should be omitted. Some blockchains require the PublicKey of particular AccountIdentifiers to construct a valid transaction. To fetch these PublicKeys, populate required_public_keys with the AccountIdentifiers associated with the desired PublicKeys. If it is not necessary to retrieve any PublicKeys for construction, required_public_keys should be omitted.
+ */
+export interface RosettaConstructionPreprocessResponse {
+  /**
+   * The options that will be sent directly to /construction/metadata by the caller.
+   */
+  options?: {
+    [k: string]: unknown | undefined;
+  };
+  required_public_keys?: RosettaAccount;
+}
+
+/**
  * Get all Transaction Identifiers in the mempool
  */
 export interface RosettaMempoolRequest {
@@ -804,6 +857,20 @@ export interface RosettaAccount {
 /**
  * Amount is some Value of a Currency. It is considered invalid to specify a Value without a Currency.
  */
+export interface RosettaMaxFeeAmount {
+  /**
+   * Value of the transaction in atomic units represented as an arbitrary-sized signed integer. For example, 1 BTC would be represented by a value of 100000000.
+   */
+  value: string;
+  currency: RosettaCurrency;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * Amount is some Value of a Currency. It is considered invalid to specify a Value without a Currency.
+ */
 export interface RosettaAmount {
   /**
    * Value of the transaction in atomic units represented as an arbitrary-sized signed integer. For example, 1 BTC would be represented by a value of 100000000.
@@ -1114,6 +1181,20 @@ export interface RosettaPartialBlockIdentifier {
    * Block hash
    */
   hash?: string;
+}
+
+/**
+ * PublicKey contains a public key byte array for a particular CurveType encoded in hex. Note that there is no PrivateKey struct as this is NEVER the concern of an implementation.
+ */
+export interface RosettaPublicKey {
+  /**
+   * Hex-encoded public key bytes in the format specified by the CurveType.
+   */
+  hex_bytes: string;
+  /**
+   * CurveType is the type of cryptographic curve associated with a PublicKey.
+   */
+  curve_type: "secp256k1" | "edwards25519";
 }
 
 /**
