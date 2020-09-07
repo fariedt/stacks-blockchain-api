@@ -15,6 +15,7 @@ import { RosettaErrors, RosettaConstants } from '../../rosetta-constants';
 import { has0xPrefix, FoundOrNot } from '../../../helpers';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from '../../rosetta-validate';
 import { publicKeyToAddress, convertToSTXAddress } from './../../../rosetta-helpers';
+import { StacksCoreRpcClient } from '../../../core-rpc/client';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -75,7 +76,20 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     }
   });
 
-  router.postAsync('/metadata', async (req, res) => {});
+  router.postAsync('/metadata', async (req, res) => {
+    // const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
+    // if (!valid.valid) {
+    //   res.status(400).json(makeRosettaError(valid));
+    //   return;
+    // }
+
+    ///const options = req.body.options;
+
+    const client = new StacksCoreRpcClient();
+    const result = await client.getFees();
+    res.json(result);
+    // return result;
+  });
 
   router.postAsync('/payloads', async (req, res) => {});
 
