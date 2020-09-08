@@ -1,0 +1,38 @@
+{
+  "$id": "rosetta-construction-options",
+  "title": "RosettaOptions",
+  "type": "object",
+  "description": "The options that will be sent directly to /construction/metadata by the caller.",
+  "required": [],
+  "properties": {
+    "sender_address": {
+      "type": "string",
+      "description": "sender's address "
+    },
+    "type": {
+      "type": "string",
+      "description": "Type of operation e.g transfer"
+    },
+    "status": {
+      "type": "string",
+      "description": "This value indicates the state of the operations"
+    },
+    "token_transffer_recipient_address": {
+      "type": "string",
+      "description": "Recipients's address"
+    },
+    "amount": {
+      "type": "integer",
+      "description": "Amount to be transfeered."
+    },
+    "symbol": {
+      "type": "string",
+      "description": "Currcny symbol e.g STX"
+    },
+    "decimals": {
+      "type": "integer",
+      "description": "number of decimal places"
+    }
+  },
+  "additionalProperties": true
+}

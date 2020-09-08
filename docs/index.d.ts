@@ -309,6 +309,15 @@ export interface RosettaConstructionDeriveResponse {
 }
 
 /**
+ * A ConstructionMetadataRequest is utilized to get information required to construct a transaction. The Options object used to specify which metadata to return is left purposely unstructured to allow flexibility for implementers. Optionally, the request can also include an array of PublicKeys associated with the AccountIdentifiers returned in ConstructionPreprocessResponse.
+ */
+export interface RosettaConstructionMetadataRequest {
+  network_identifier: NetworkIdentifier;
+  options: RosettaOptions;
+  public_keys?: RosettaPublicKey;
+}
+
+/**
  * ConstructionPreprocessRequest is passed to the /construction/preprocess endpoint so that a Rosetta implementation can determine which metadata it needs to request for construction
  */
 export interface RosettaConstructionPreprocessRequest {
@@ -328,12 +337,7 @@ export interface RosettaConstructionPreprocessRequest {
  * ConstructionPreprocessResponse contains options that will be sent unmodified to /construction/metadata. If it is not necessary to make a request to /construction/metadata, options should be omitted. Some blockchains require the PublicKey of particular AccountIdentifiers to construct a valid transaction. To fetch these PublicKeys, populate required_public_keys with the AccountIdentifiers associated with the desired PublicKeys. If it is not necessary to retrieve any PublicKeys for construction, required_public_keys should be omitted.
  */
 export interface RosettaConstructionPreprocessResponse {
-  /**
-   * The options that will be sent directly to /construction/metadata by the caller.
-   */
-  options?: {
-    [k: string]: unknown | undefined;
-  };
+  options?: RosettaOptions;
   required_public_keys?: RosettaAccount;
 }
 
@@ -984,6 +988,40 @@ export interface RosettaCoin {
     [k: string]: unknown | undefined;
   };
   amount: RosettaAmount;
+}
+
+/**
+ * The options that will be sent directly to /construction/metadata by the caller.
+ */
+export interface RosettaOptions {
+  /**
+   * sender's address
+   */
+  sender_address?: string;
+  /**
+   * Type of operation e.g transfer
+   */
+  type?: string;
+  /**
+   * This value indicates the state of the operations
+   */
+  status?: string;
+  /**
+   * Recipients's address
+   */
+  token_transffer_recipient_address?: string;
+  /**
+   * Amount to be transfeered.
+   */
+  amount?: number;
+  /**
+   * Currcny symbol e.g STX
+   */
+  symbol?: string;
+  /**
+   * number of decimal places
+   */
+  decimals?: number;
 }
 
 /**

@@ -12,14 +12,17 @@ enum CoinAction {
   CoinCreated = 'coin_created',
 }
 
-export function publicKeyToAddress(publicKey: string) {
+export function publicKeyToAddress(publicKey: string): string {
   const publicKeyBuffer = Buffer.from(publicKey, 'hex');
-  const publicKeyHash160 = btc.crypto.hash160(publicKeyBuffer);
-  const address = btc.address.toBase58Check(publicKeyHash160, 0x00);
-  return address;
+
+  const address = btc.payments.p2pkh({
+    pubkey: publicKeyBuffer,
+    network: btc.networks.regtest,
+  });
+  return address.address ? address.address : '';
 }
 
-export function convertToSTXAddress(btcAddress: string) {
+export function convertToSTXAddress(btcAddress: string): string {
   return c32check.b58ToC32(btcAddress);
 }
 
