@@ -161,4 +161,11 @@ export class StacksCoreRpcClient {
     });
     return result;
   }
+
+  async getFees(): Promise<any> {
+    const result = await this.fetchJson('v2/fees/transfer', {
+      method: 'GET',
+    });
+    return result;
+  }
 }
