@@ -7,9 +7,7 @@
   "required": [],
   "properties": {
     "options": {
-      "type": "object",
-      "description": "The options that will be sent directly to /construction/metadata by the caller.",
-      "additionalProperties": true
+      "$ref": "./../../entities/rosetta/rosetta-construction-options.schema.json"
     },
     "required_public_keys": {
       "$ref": "./../../entities/rosetta/rosetta-account.schema.json"
