@@ -54,7 +54,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(500).json(RosettaErrors.invalidParams);
     }
 
-    const options: any = {
+    const options: RosettaOptions = {
       sender_address: operations[0].account?.address,
       type: operations[0].type,
       status: operations[0].status,
@@ -83,8 +83,6 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
         max_fee.currency.decimals === RosettaConstants.decimals
       ) {
         options.max_fee = max_fee.value;
-      } else {
-        res.status(500).json(RosettaErrors.invalidParams);
       }
     }
 
