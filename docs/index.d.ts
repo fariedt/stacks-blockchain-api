@@ -1021,7 +1021,7 @@ export interface RosettaOptions {
   /**
    * Recipients's address
    */
-  token_transffer_recipient_address?: string;
+  token_transfer_recipient_address?: string;
   /**
    * Amount to be transfeered.
    */

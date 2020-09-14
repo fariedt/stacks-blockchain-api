@@ -17,7 +17,7 @@
       "type": "string",
       "description": "This value indicates the state of the operations"
     },
-    "token_transffer_recipient_address": {
+    "token_transfer_recipient_address": {
       "type": "string",
       "description": "Recipients's address"
     },
