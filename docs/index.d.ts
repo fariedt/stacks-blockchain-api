@@ -1268,6 +1268,20 @@ export interface RosettaPublicKey {
 }
 
 /**
+ * PublicKey contains a public key byte array for a particular CurveType encoded in hex. Note that there is no PrivateKey struct as this is NEVER the concern of an implementation.
+ */
+export interface RosettaPublicKey {
+  /**
+   * Hex-encoded public key bytes in the format specified by the CurveType.
+   */
+  hex_bytes: string;
+  /**
+   * CurveType is the type of cryptographic curve associated with a PublicKey.
+   */
+  curve_type: "secp256k1" | "edwards25519";
+}
+
+/**
  * Restrict referenced related_operations to identifier indexes < the current operation_identifier.index. This ensures there exists a clear DAG-structure of relations. Since operations are one-sided, one could imagine relating operations in a single transfer or linking operations in a call tree.
  */
 export interface RosettaRelatedOperation {
