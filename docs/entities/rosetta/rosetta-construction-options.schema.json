@@ -22,7 +22,7 @@
       "description": "Recipients's address"
     },
     "amount": {
-      "type": "integer",
+      "type": "string",
       "description": "Amount to be transfeered."
     },
     "symbol": {
@@ -32,7 +32,22 @@
     "decimals": {
       "type": "integer",
       "description": "number of decimal places"
+    },
+    "gas_limit": {
+      "type": "number",
+      "description": "Maximum price a user is willing to pay."
+    },
+    "gas_price": {
+      "type": "number",
+      "description": "Cost necessary to perform a transaction on the network"
+    },
+    "suggested_fee_multiplier": {
+      "type": "number",
+      "description": " A suggested fee multiplier to indicate that the suggested fee should be scaled. This may be used to set higher fees for urgent transactions or to pay lower fees when there is less urgency."
+    },
+    "max_fee": {
+      "type": "string",
+      "description": "Maximum fee user is willing to pay"
     }
-  },
-  "additionalProperties": true
+  }
 }

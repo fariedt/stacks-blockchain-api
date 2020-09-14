@@ -1025,7 +1025,7 @@ export interface RosettaOptions {
   /**
    * Amount to be transfeered.
    */
-  amount?: number;
+  amount?: string;
   /**
    * Currcny symbol e.g STX
    */
@@ -1034,6 +1034,22 @@ export interface RosettaOptions {
    * number of decimal places
    */
   decimals?: number;
+  /**
+   * Maximum price a user is willing to pay.
+   */
+  gas_limit?: number;
+  /**
+   * Cost necessary to perform a transaction on the network
+   */
+  gas_price?: number;
+  /**
+   *  A suggested fee multiplier to indicate that the suggested fee should be scaled. This may be used to set higher fees for urgent transactions or to pay lower fees when there is less urgency.
+   */
+  suggested_fee_multiplier?: number;
+  /**
+   * Maximum fee user is willing to pay
+   */
+  max_fee?: string;
 }
 
 /**
@@ -1252,20 +1268,6 @@ export interface RosettaParentBlockIdentifier {
  * When fetching data by BlockIdentifier, it may be possible to only specify the index or hash. If neither property is specified, it is assumed that the client is making a request at the current block.
  */
 export type RosettaPartialBlockIdentifier = RosettaBlockIdentifierHash | RosettaBlockIdentifierHeight;
-
-/**
- * PublicKey contains a public key byte array for a particular CurveType encoded in hex. Note that there is no PrivateKey struct as this is NEVER the concern of an implementation.
- */
-export interface RosettaPublicKey {
-  /**
-   * Hex-encoded public key bytes in the format specified by the CurveType.
-   */
-  hex_bytes: string;
-  /**
-   * CurveType is the type of cryptographic curve associated with a PublicKey.
-   */
-  curve_type: "secp256k1" | "edwards25519";
-}
 
 /**
  * PublicKey contains a public key byte array for a particular CurveType encoded in hex. Note that there is no PrivateKey struct as this is NEVER the concern of an implementation.
