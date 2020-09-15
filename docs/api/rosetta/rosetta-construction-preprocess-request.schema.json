@@ -19,7 +19,10 @@
       "type": "object"
     },
     "max_fee": {
-      "$ref": "./../../entities/rosetta/rosetta-amount-max-fee.schema.json"
+      "type": "array",
+      "items": {
+        "$ref": "./../../entities/rosetta/rosetta-amount-max-fee.schema.json"
+      }
     },
     "suggested_fee_multiplier": {
       "type": "integer",

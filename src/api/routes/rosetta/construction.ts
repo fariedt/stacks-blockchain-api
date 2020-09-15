@@ -22,6 +22,8 @@ import {
   makeUnsignedSTXTokenTransfer,
   UnsignedTokenTransferOptions,
 } from '@blockstack/stacks-transactions';
+import { type } from 'os';
+import { isValidC32Address } from '../../../helpers';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -90,6 +92,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       amount: transferToOperation?.amount?.value,
       symbol: transferToOperation?.amount?.currency.symbol,
       decimals: transferToOperation?.amount?.currency.decimals,
+      fee: feeOperation?.amount?.value,
     };
 
     // if (operations && operations.length < 2) {
@@ -140,6 +143,22 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     if (!valid.valid) {
       res.status(400).json(makeRosettaError(valid));
       return;
+    }
+
+    const options: RosettaOptions = req.body.options;
+    if (options.type != 'token_transfer') {
+      res.status(400).json(RosettaErrors.invalidTransactionType);
+    }
+
+    if (options?.sender_address && !isValidC32Address(options.sender_address)) {
+      res.status(400).json(RosettaErrors.invalidSender);
+    }
+
+    if (
+      options?.token_transfer_recipient_address &&
+      !isValidC32Address(options.token_transfer_recipient_address)
+    ) {
+      res.status(400).json(RosettaErrors.invalidRecipient);
     }
 
     const response: RosettaConstructionMetadataResponse = {

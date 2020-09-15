@@ -135,6 +135,21 @@ export const RosettaErrors: Record<string, RosettaError> = {
     message: 'Network name is null.',
     retriable: true,
   },
+  invalidTransactionType: {
+    code: 619,
+    message: 'Invalid transaction type',
+    retriable: false,
+  },
+  invalidSender: {
+    code: 620,
+    message: 'Invalid sender address',
+    retriable: false,
+  },
+  invalidRecipient: {
+    code: 621,
+    message: 'Invalid recipient address',
+    retriable: false,
+  },
 };
 
 // All request types, used to validate input.
