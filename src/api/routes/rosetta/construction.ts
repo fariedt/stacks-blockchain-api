@@ -18,6 +18,10 @@ import {
 import { RosettaErrors, RosettaConstants } from './../../rosetta-constants';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from './../../rosetta-validate';
 import { publicKeyToAddress, convertToSTXAddress } from './../../../rosetta-helpers';
+import {
+  makeUnsignedSTXTokenTransfer,
+  UnsignedTokenTransferOptions,
+} from '@blockstack/stacks-transactions';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -49,26 +53,64 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     }
 
     const operations: RosettaOperation[] = req.body.operations;
+    var feeOperation: RosettaOperation | null = null;
+    var transferToOperation: RosettaOperation | null = null;
+    var transferFromOperation: RosettaOperation | null = null;
 
-    if (operations && operations.length > 1) {
-      res.status(500).json(RosettaErrors.invalidParams);
+    for (const operation of operations) {
+      switch (operation.type) {
+        case 'fee':
+          feeOperation = operation;
+          break;
+        case 'token_transfer':
+          if (operation.amount) {
+            if (BigInt(operation.amount.value) < 0) {
+              transferFromOperation = operation;
+            } else {
+              transferToOperation = operation;
+            }
+          }
+          break;
+        case 'contract_call':
+          break;
+        // case 'coinbase':
+        //   break;
+        case 'smart_contract':
+          break;
+        default:
+          break;
+      }
     }
 
     const options: RosettaOptions = {
-      sender_address: operations[0].account?.address,
-      type: operations[0].type,
-      status: operations[0].status,
-      token_transffer_recipient_address: operations[1].account?.address,
-      amount: operations[1].amount?.value,
-      symbol: operations[1].amount?.currency.symbol,
-      decimals: operations[1].amount?.currency.decimals,
+      sender_address: transferFromOperation?.account?.address,
+      type: transferFromOperation?.type,
+      status: transferFromOperation?.status,
+      token_transfer_recipient_address: transferToOperation?.account?.address,
+      amount: transferToOperation?.amount?.value,
+      symbol: transferToOperation?.amount?.currency.symbol,
+      decimals: transferToOperation?.amount?.currency.decimals,
     };
+
+    // if (operations && operations.length < 2) {
+    //   res.status(500).json(RosettaErrors.invalidParams);
+    // }
+
+    // const options: RosettaOptions = {
+    //   sender_address: operations[0].account?.address,
+    //   type: operations[0].type,
+    //   status: operations[0].status,
+    //   token_transfer_recipient_address: operations[1].account?.address,
+    //   amount: operations[1].amount?.value,
+    //   symbol: operations[1].amount?.currency.symbol,
+    //   decimals: operations[1].amount?.currency.decimals,
+    // };
 
     if (req.body.metadata.gas_limit) {
       options.gas_limit = req.body.metadata.gas_limit;
     }
 
-    if (req.body.metadata.gas_limit) {
+    if (req.body.metadata.gas_price) {
       options.gas_price = req.body.metadata.gas_price;
     }
 
@@ -107,7 +149,22 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     res.json(response);
   });
 
-  router.postAsync('/payloads', async (req, res) => {});
+  router.postAsync('/payloads', async (req, res) => {
+    //const tokenTransferOptions : UnsignedTokenTransferOptions = {
+    // recipient: string | PrincipalCV; (metadata api call)
+    //amount: BigNum; (operation)
+    // fee?: BigNum; (operation)
+    //  nonce?: BigNum; (needs discussion)
+    //   network?: StacksNetwork; (default network)
+    //   anchorMode?: AnchorMode; (default anchor mode)
+    //   memo?: string; ( should we add this , if yes in which operatui)
+    //  postConditionMode?: PostConditionMode; (needs discussion)
+    // postConditions?: PostCondition[]; (needs discussion)
+    // sponsored?: boolean; (needs discussion)
+    //  publicKey: string; // from request body
+    // }
+    //makeUnsignedSTXTokenTransfer()
+  });
 
   router.postAsync('/parse', async (req, res) => {});
 
