@@ -309,6 +309,24 @@ export interface RosettaConstructionDeriveResponse {
 }
 
 /**
+ * RosettaConstructionHashRequest is the input to the /construction/hash endpoint.
+ */
+export interface RosettaConstructionHashRequest {
+  network_identifier: NetworkIdentifier;
+  signed_transaction: string;
+}
+
+/**
+ * RosettaConstructionHashResponse contains the transaction_identifier of a transaction that was submitted to either /construction/hash or /construction/submit
+ */
+export interface RosettaConstructionHashResponse {
+  transaction_identifier: TransactionIdentifier;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * A ConstructionMetadataRequest is utilized to get information required to construct a transaction. The Options object used to specify which metadata to return is left purposely unstructured to allow flexibility for implementers. Optionally, the request can also include an array of PublicKeys associated with the AccountIdentifiers returned in ConstructionPreprocessResponse.
  */
 export interface RosettaConstructionMetadataRequest {

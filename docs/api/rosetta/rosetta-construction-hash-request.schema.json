@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "rosetta-construction-hash",
+  "type": "object",
+  "title": "RosettaConstructionHashRequest",
+  "description": "RosettaConstructionHashRequest is the input to the /construction/hash endpoint.",
+  "required": ["network_identifier", "signed_transaction"],
+  "properties": {
+    "network_identifier": {
+      "$ref": "./../../entities/rosetta/rosetta-network-identifier.schema.json"
+    },
+    "signed_transaction": {
+      "type": "string",
+      "description": ""
+    }
+  }
+}
