@@ -169,20 +169,17 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
   });
 
   router.postAsync('/payloads', async (req, res) => {
-    //const tokenTransferOptions : UnsignedTokenTransferOptions = {
-    // recipient: string | PrincipalCV; (metadata api call)
-    //amount: BigNum; (operation)
-    // fee?: BigNum; (operation)
-    //  nonce?: BigNum; (needs discussion)
-    //   network?: StacksNetwork; (default network)
-    //   anchorMode?: AnchorMode; (default anchor mode)
-    //   memo?: string; ( should we add this , if yes in which operatui)
-    //  postConditionMode?: PostConditionMode; (needs discussion)
-    // postConditions?: PostCondition[]; (needs discussion)
-    // sponsored?: boolean; (needs discussion)
-    //  publicKey: string; // from request body
-    // }
-    //makeUnsignedSTXTokenTransfer()
+    const options: any = req.body;
+
+    const tokenTransferOptions: UnsignedTokenTransferOptions = {
+      recipient: options.token_transfer_recipient_address,
+      amount: options.amount,
+      fee: options.fee,
+      publicKey: options.sender_address,
+      nonce: options.nonce,
+    };
+    const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
+    res.json(transaction);
   });
 
   router.postAsync('/parse', async (req, res) => {});
