@@ -1050,6 +1050,12 @@ export interface RosettaOptions {
    * Maximum fee user is willing to pay
    */
   max_fee?: string;
+  /**
+   * Fee for this transaction
+   */
+  fee?: string;
+  contract_address?: string;
+  function_name?: string;
 }
 
 /**
