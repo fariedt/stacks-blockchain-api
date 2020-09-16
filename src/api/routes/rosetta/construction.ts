@@ -13,11 +13,17 @@ import {
   RosettaMaxFeeAmount,
   RosettaConstructionPreprocessRequest,
   RosettaOptions,
-  RosettaConstructionMetadataResponse,, RosettaConstructionHashResponse, RosettaConstructionPayloadsRequest
+  RosettaConstructionMetadataResponse,
+  RosettaConstructionHashResponse,
+  RosettaConstructionPayloadsRequest,
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from './../../rosetta-constants';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from './../../rosetta-validate';
-import { publicKeyToAddress, convertToSTXAddress, getOptionsFromOperations } from './../../../rosetta-helpers';
+import {
+  publicKeyToAddress,
+  convertToSTXAddress,
+  getOptionsFromOperations,
+} from './../../../rosetta-helpers';
 import {
   makeUnsignedSTXTokenTransfer,
   UnsignedTokenTransferOptions,
@@ -56,9 +62,9 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     }
 
     const operations: RosettaOperation[] = req.body.operations;
-    var feeOperation: RosettaOperation | null = null;
-    var transferToOperation: RosettaOperation | null = null;
-    var transferFromOperation: RosettaOperation | null = null;
+    let feeOperation: RosettaOperation | null = null;
+    let transferToOperation: RosettaOperation | null = null;
+    let transferFromOperation: RosettaOperation | null = null;
 
     for (const operation of operations) {
       switch (operation.type) {
@@ -151,14 +157,16 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
   router.postAsync('/payloads', async (req, res) => {
     const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
-    if(!valid.valid) {
+    if (!valid.valid) {
       res.status(400).json(makeRosettaError(valid));
       return;
     }
 
     const options = getOptionsFromOperations(req.body.operations);
-    const recipientAddress = options.token_transfer_recipient_address ? options.token_transfer_recipient_address : '';
-    const senderAddress = options.sender_address? options.sender_address : '';
+    const recipientAddress = options.token_transfer_recipient_address
+      ? options.token_transfer_recipient_address
+      : '';
+    const senderAddress = options.sender_address ? options.sender_address : '';
 
     const tokenTransferOptions: UnsignedTokenTransferOptions = {
       recipient: recipientAddress,
@@ -184,12 +192,12 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
     const signedTransaction = req.body.signed_transaction;
     const hash = signedTransaction.serialize().toString('hex');
-    
+
     const response: RosettaConstructionHashResponse = {
       transaction_identifier: {
-        hash: hash
-      }
-    }
+        hash: hash,
+      },
+    };
     return res.json(response);
   });
 

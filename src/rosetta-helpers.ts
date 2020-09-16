@@ -188,9 +188,9 @@ function makePoisonMicroblockOperation(tx: DbMempoolTx | DbTx, index: number): R
 }
 
 export function getOptionsFromOperations(operations: RosettaOperation[]): RosettaOptions {
-  var feeOperation: RosettaOperation | null = null;
-  var transferToOperation: RosettaOperation | null = null;
-  var transferFromOperation: RosettaOperation | null = null;
+  let feeOperation: RosettaOperation | null = null;
+  let transferToOperation: RosettaOperation | null = null;
+  let transferFromOperation: RosettaOperation | null = null;
 
   for (const operation of operations) {
     switch (operation.type) {
