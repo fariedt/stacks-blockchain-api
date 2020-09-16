@@ -186,7 +186,18 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
   router.postAsync('/combine', async (req, res) => {});
 
-  router.postAsync('/hash', async (req, res) => {});
+  router.postAsync('/hash', async (req, res) => {
+    const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
+    if (!valid.valid) {
+      res.status(400).json(makeRosettaError(valid));
+      return;
+    }
+
+    const signedTransaction = req.body.signed_transaction;
+    const hash = signedTransaction.serialize().toString('hex');
+
+    return res.json(hash);
+  });
 
   router.postAsync('/submit', async (req, res) => {});
 
