@@ -13,17 +13,18 @@ import {
   RosettaMaxFeeAmount,
   RosettaConstructionPreprocessRequest,
   RosettaOptions,
-  RosettaConstructionMetadataResponse,
+  RosettaConstructionMetadataResponse,, RosettaConstructionHashResponse, RosettaConstructionPayloadsRequest
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from './../../rosetta-constants';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from './../../rosetta-validate';
-import { publicKeyToAddress, convertToSTXAddress } from './../../../rosetta-helpers';
+import { publicKeyToAddress, convertToSTXAddress, getOptionsFromOperations } from './../../../rosetta-helpers';
 import {
   makeUnsignedSTXTokenTransfer,
   UnsignedTokenTransferOptions,
 } from '@blockstack/stacks-transactions';
 import { type } from 'os';
 import { isValidC32Address } from '../../../helpers';
+import BN = require('bn.js');
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -73,12 +74,6 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
             }
           }
           break;
-        case 'contract_call':
-          break;
-        // case 'coinbase':
-        //   break;
-        case 'smart_contract':
-          break;
         default:
           break;
       }
@@ -94,20 +89,6 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       decimals: transferToOperation?.amount?.currency.decimals,
       fee: feeOperation?.amount?.value,
     };
-
-    // if (operations && operations.length < 2) {
-    //   res.status(500).json(RosettaErrors.invalidParams);
-    // }
-
-    // const options: RosettaOptions = {
-    //   sender_address: operations[0].account?.address,
-    //   type: operations[0].type,
-    //   status: operations[0].status,
-    //   token_transfer_recipient_address: operations[1].account?.address,
-    //   amount: operations[1].amount?.value,
-    //   symbol: operations[1].amount?.currency.symbol,
-    //   decimals: operations[1].amount?.currency.decimals,
-    // };
 
     if (req.body.metadata.gas_limit) {
       options.gas_limit = req.body.metadata.gas_limit;
@@ -169,15 +150,23 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
   });
 
   router.postAsync('/payloads', async (req, res) => {
-    const options: any = req.body;
+    const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
+    if(!valid.valid) {
+      res.status(400).json(makeRosettaError(valid));
+      return;
+    }
+
+    const options = getOptionsFromOperations(req.body.operations);
+    const recipientAddress = options.token_transfer_recipient_address ? options.token_transfer_recipient_address : '';
+    const senderAddress = options.sender_address? options.sender_address : '';
 
     const tokenTransferOptions: UnsignedTokenTransferOptions = {
-      recipient: options.token_transfer_recipient_address,
-      amount: options.amount,
-      fee: options.fee,
-      publicKey: options.sender_address,
-      nonce: options.nonce,
+      recipient: recipientAddress,
+      amount: options.amount ? new BN(options.amount) : new BN(0),
+      fee: options.fee ? new BN(options.fee) : new BN(0),
+      publicKey: senderAddress,
     };
+
     const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
     res.json(transaction);
   });
@@ -195,8 +184,13 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
     const signedTransaction = req.body.signed_transaction;
     const hash = signedTransaction.serialize().toString('hex');
-
-    return res.json(hash);
+    
+    const response: RosettaConstructionHashResponse = {
+      transaction_identifier: {
+        hash: hash
+      }
+    }
+    return res.json(response);
   });
 
   router.postAsync('/submit', async (req, res) => {});

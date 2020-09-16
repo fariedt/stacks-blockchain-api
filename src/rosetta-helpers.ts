@@ -5,7 +5,7 @@ import * as btc from 'bitcoinjs-lib';
 import * as c32check from 'c32check';
 
 import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from './helpers';
-import { RosettaOperation } from '@blockstack/stacks-blockchain-api-types';
+import { RosettaOperation, RosettaOptions } from '@blockstack/stacks-blockchain-api-types';
 
 enum CoinAction {
   CoinSpent = 'coin_spent',
@@ -185,4 +185,48 @@ function makePoisonMicroblockOperation(tx: DbMempoolTx | DbTx, index: number): R
   };
 
   return sender;
+}
+
+export function getOptionsFromOperations(operations: RosettaOperation[]): RosettaOptions {
+  var feeOperation: RosettaOperation | null = null;
+  var transferToOperation: RosettaOperation | null = null;
+  var transferFromOperation: RosettaOperation | null = null;
+
+  for (const operation of operations) {
+    switch (operation.type) {
+      case 'fee':
+        feeOperation = operation;
+        break;
+      case 'token_transfer':
+        if (operation.amount) {
+          if (BigInt(operation.amount.value) < 0) {
+            transferFromOperation = operation;
+          } else {
+            transferToOperation = operation;
+          }
+        }
+        break;
+      case 'contract_call':
+        break;
+      // case 'coinbase':
+      //   break;
+      case 'smart_contract':
+        break;
+      default:
+        break;
+    }
+  }
+
+  const options: RosettaOptions = {
+    sender_address: transferFromOperation?.account?.address,
+    type: transferFromOperation?.type,
+    status: transferFromOperation?.status,
+    token_transfer_recipient_address: transferToOperation?.account?.address,
+    amount: transferToOperation?.amount?.value,
+    symbol: transferToOperation?.amount?.currency.symbol,
+    decimals: transferToOperation?.amount?.currency.decimals,
+    fee: feeOperation?.amount?.value,
+  };
+
+  return options;
 }
