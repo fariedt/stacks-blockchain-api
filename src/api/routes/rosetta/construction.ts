@@ -170,11 +170,11 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
   });
 
   router.postAsync('/payloads', async (req, res) => {
-    const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
-    if (!valid.valid) {
-      res.status(400).json(makeRosettaError(valid));
-      return;
-    }
+    // const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
+    // if (!valid.valid) {
+    //   res.status(400).json(makeRosettaError(valid));
+    //   return;
+    // }
 
     const options = getOptionsFromOperations(req.body.operations);
     const recipientAddress = options.token_transfer_recipient_address
