@@ -150,6 +150,11 @@ export const RosettaErrors: Record<string, RosettaError> = {
     message: 'Invalid recipient address',
     retriable: false,
   },
+  invalidOperation: {
+    code: 622,
+    message: 'Invalid operation',
+    retriable: false,
+  },
 };
 
 // All request types, used to validate input.

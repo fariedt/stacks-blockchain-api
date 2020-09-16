@@ -27,10 +27,18 @@ import {
 import {
   makeUnsignedSTXTokenTransfer,
   UnsignedTokenTransferOptions,
+  StacksTestnet,
 } from '@blockstack/stacks-transactions';
 import { type } from 'os';
 import { isValidC32Address } from '../../../helpers';
 import BN = require('bn.js');
+import { getCoreNodeEndpoint } from '../../../core-rpc/client';
+
+export function GetStacksTestnetNetwork() {
+  const stacksNetwork = new StacksTestnet();
+  stacksNetwork.coreApiUrl = `http://${getCoreNodeEndpoint()}`;
+  return stacksNetwork;
+}
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -66,6 +74,11 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     let transferToOperation: RosettaOperation | null = null;
     let transferFromOperation: RosettaOperation | null = null;
 
+    if (operations.length != 3) {
+      res.status(400).json(RosettaErrors.invalidOperation);
+      return;
+    }
+
     for (const operation of operations) {
       switch (operation.type) {
         case 'fee':
@@ -81,6 +94,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
           }
           break;
         default:
+          res.status(400).json(RosettaErrors.invalidOperation);
           break;
       }
     }
@@ -173,6 +187,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       amount: options.amount ? new BN(options.amount) : new BN(0),
       fee: options.fee ? new BN(options.fee) : new BN(0),
       publicKey: senderAddress,
+      network: GetStacksTestnetNetwork(),
     };
 
     const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
