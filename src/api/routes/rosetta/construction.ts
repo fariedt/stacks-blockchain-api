@@ -26,7 +26,10 @@ import {
   GetStacksTestnetNetwork,
 } from './../../../rosetta-helpers';
 import {
+  createStacksPrivateKey,
+  getPublicKey,
   makeUnsignedSTXTokenTransfer,
+  publicKeyToString,
   UnsignedTokenTransferOptions,
 } from '@blockstack/stacks-transactions';
 import { type } from 'os';
@@ -164,21 +167,26 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       return;
     }
 
+    //    const publicKey = publicKeyToString(getPublicKey(createStacksPrivateKey(txOptions.senderKey)));
+
     const recipientAddress = options.token_transfer_recipient_address
       ? options.token_transfer_recipient_address
       : '';
     const senderAddress = options.sender_address ? options.sender_address : '';
 
-    const tokenTransferOptions: UnsignedTokenTransferOptions = {
-      recipient: recipientAddress,
-      amount: options.amount ? new BN(options.amount) : new BN(0),
-      fee: options.fee ? new BN(options.fee) : new BN(0),
-      publicKey: senderAddress,
-      network: GetStacksTestnetNetwork(),
-    };
+    //    const publicKey = publicKeyToString(getPublicKey(createStacksPrivateKey(senderAddress)));
 
-    const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
-    res.json(transaction.serialize().toString('hex'));
+    res.json(createStacksPrivateKey('STDE7Y8HV3RX8VBM2TZVWJTS7ZA1XB0SSC3NEVH0'));
+    // const tokenTransferOptions: UnsignedTokenTransferOptions = {
+    //   recipient: recipientAddress,
+    //   amount: options.amount ? new BN(options.amount) : new BN(0),
+    //   fee: options.fee ? new BN(options.fee) : new BN(0),
+    //   publicKey: senderAddress,
+    //   network: GetStacksTestnetNetwork(),
+    // };
+
+    // const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
+    // res.json(transaction.serialize().toString('hex'));
   });
 
   router.postAsync('/parse', async (req, res) => {});
