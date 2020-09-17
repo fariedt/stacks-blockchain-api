@@ -119,10 +119,22 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     const options: RosettaOptions = req.body.options;
     if (options.type != 'token_transfer') {
       res.status(400).json(RosettaErrors.invalidTransactionType);
+      return;
     }
 
     if (options?.sender_address && !isValidC32Address(options.sender_address)) {
       res.status(400).json(RosettaErrors.invalidSender);
+      return;
+    }
+
+    if (options?.symbol !== 'STX') {
+      res.status(400).json(RosettaErrors.invalidCurrencySymbol);
+      return;
+    }
+
+    if (options?.decimals !== 6) {
+      res.status(400).json(RosettaErrors.invalidCurrencyDecimals);
+      return;
     }
 
     if (
