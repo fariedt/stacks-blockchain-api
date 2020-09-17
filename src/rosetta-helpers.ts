@@ -187,7 +187,7 @@ function makePoisonMicroblockOperation(tx: DbMempoolTx | DbTx, index: number): R
   return sender;
 }
 
-export function getOptionsFromOperations(operations: RosettaOperation[]): RosettaOptions {
+export function getOptionsFromOperations(operations: RosettaOperation[]): RosettaOptions | null {
   let feeOperation: RosettaOperation | null = null;
   let transferToOperation: RosettaOperation | null = null;
   let transferFromOperation: RosettaOperation | null = null;
@@ -206,14 +206,8 @@ export function getOptionsFromOperations(operations: RosettaOperation[]): Rosett
           }
         }
         break;
-      case 'contract_call':
-        break;
-      // case 'coinbase':
-      //   break;
-      case 'smart_contract':
-        break;
       default:
-        break;
+        return null;
     }
   }
 

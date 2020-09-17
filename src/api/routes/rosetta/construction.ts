@@ -70,45 +70,18 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     }
 
     const operations: RosettaOperation[] = req.body.operations;
-    let feeOperation: RosettaOperation | null = null;
-    let transferToOperation: RosettaOperation | null = null;
-    let transferFromOperation: RosettaOperation | null = null;
 
+    // We are only supporting transfer, we should have operations length = 3
     if (operations.length != 3) {
       res.status(400).json(RosettaErrors.invalidOperation);
       return;
     }
 
-    for (const operation of operations) {
-      switch (operation.type) {
-        case 'fee':
-          feeOperation = operation;
-          break;
-        case 'token_transfer':
-          if (operation.amount) {
-            if (BigInt(operation.amount.value) < 0) {
-              transferFromOperation = operation;
-            } else {
-              transferToOperation = operation;
-            }
-          }
-          break;
-        default:
-          res.status(400).json(RosettaErrors.invalidOperation);
-          break;
-      }
+    const options = getOptionsFromOperations(req.body.operations);
+    if (options == null) {
+      res.status(400).json(RosettaErrors.invalidOperation);
+      return;
     }
-
-    const options: RosettaOptions = {
-      sender_address: transferFromOperation?.account?.address,
-      type: transferFromOperation?.type,
-      status: transferFromOperation?.status,
-      token_transfer_recipient_address: transferToOperation?.account?.address,
-      amount: transferToOperation?.amount?.value,
-      symbol: transferToOperation?.amount?.currency.symbol,
-      decimals: transferToOperation?.amount?.currency.decimals,
-      fee: feeOperation?.amount?.value,
-    };
 
     if (req.body.metadata.gas_limit) {
       options.gas_limit = req.body.metadata.gas_limit;
@@ -129,6 +102,9 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
         max_fee.currency.decimals === RosettaConstants.decimals
       ) {
         options.max_fee = max_fee.value;
+      } else {
+        res.status(400).json(RosettaErrors.invalidFee);
+        return;
       }
     }
 
@@ -177,6 +153,10 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     }
 
     const options = getOptionsFromOperations(req.body.operations);
+    if (options == null) {
+      res.status(400).json(RosettaErrors.invalidOperation);
+      return;
+    }
     const recipientAddress = options.token_transfer_recipient_address
       ? options.token_transfer_recipient_address
       : '';

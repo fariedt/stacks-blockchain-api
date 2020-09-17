@@ -155,6 +155,11 @@ export const RosettaErrors: Record<string, RosettaError> = {
     message: 'Invalid operation',
     retriable: false,
   },
+  invalidFee: {
+    code: 623,
+    message: 'Invalid fee',
+    retriable: false,
+  },
 };
 
 // All request types, used to validate input.
