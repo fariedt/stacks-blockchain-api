@@ -52,18 +52,6 @@
     "fee": {
       "type": "string",
       "description": "Fee for this transaction"
-    },
-    "contract_address": {
-      "type": "string",
-      "description": "contractAddress - the c32check address of the contract"
-    },
-    "contract_name": {
-      "type": "string",
-      "description": "contractName - the contract name"
-    },
-    "function_name": {
-      "type": "string",
-      "description": "functionName - name of the function to be called"
     }
   }
 }
