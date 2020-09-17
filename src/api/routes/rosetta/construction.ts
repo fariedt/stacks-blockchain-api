@@ -24,6 +24,8 @@ import {
   convertToSTXAddress,
   getOptionsFromOperations,
   GetStacksTestnetNetwork,
+  isSymbolSupported,
+  isDecimalsSupported,
 } from './../../../rosetta-helpers';
 import {
   makeUnsignedSTXTokenTransfer,
@@ -74,6 +76,16 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     const options = getOptionsFromOperations(req.body.operations);
     if (options == null) {
       res.status(400).json(RosettaErrors.invalidOperation);
+      return;
+    }
+
+    if (isSymbolSupported(req.body.operations)) {
+      res.status(400).json(RosettaErrors.invalidCurrencySymbol);
+      return;
+    }
+
+    if (isDecimalsSupported(req.body.operations)) {
+      res.status(400).json(RosettaErrors.invalidCurrencyDecimals);
       return;
     }
 

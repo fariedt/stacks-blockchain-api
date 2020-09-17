@@ -10,6 +10,8 @@ import { StacksTestnet } from '@blockstack/stacks-transactions';
 
 import { getCoreNodeEndpoint } from './core-rpc/client';
 
+import { RosettaConstants } from './api/rosetta-constants';
+
 enum CoinAction {
   CoinSpent = 'coin_spent',
   CoinCreated = 'coin_created',
@@ -226,6 +228,26 @@ export function getOptionsFromOperations(operations: RosettaOperation[]): Rosett
   };
 
   return options;
+}
+
+export function isSymbolSupported(operations: RosettaOperation[]): boolean {
+  for (const operation of operations) {
+    if (operation.amount?.currency.symbol !== RosettaConstants.symbol) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function isDecimalsSupported(operations: RosettaOperation[]): boolean {
+  for (const operation of operations) {
+    if (operation.amount?.currency.decimals !== RosettaConstants.decimals) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 export function GetStacksTestnetNetwork() {
