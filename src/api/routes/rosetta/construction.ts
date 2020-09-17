@@ -126,13 +126,12 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(RosettaErrors.invalidSender);
       return;
     }
-
-    if (options?.symbol !== 'STX') {
+    if (options?.symbol !== RosettaConstants.symbol) {
       res.status(400).json(RosettaErrors.invalidCurrencySymbol);
       return;
     }
 
-    if (options?.decimals !== 6) {
+    if (options?.decimals !== RosettaConstants.decimals) {
       res.status(400).json(RosettaErrors.invalidCurrencyDecimals);
       return;
     }
