@@ -8,7 +8,7 @@ import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from './h
 import { RosettaOperation, RosettaOptions } from '@blockstack/stacks-blockchain-api-types';
 import { StacksTestnet } from '@blockstack/stacks-transactions';
 
-import { getCoreNodeEndpoint } from '../../../core-rpc/client';
+import { getCoreNodeEndpoint } from './core-rpc/client';
 
 enum CoinAction {
   CoinSpent = 'coin_spent',
