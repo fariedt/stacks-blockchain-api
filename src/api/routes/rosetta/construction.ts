@@ -24,6 +24,8 @@ import {
   convertToSTXAddress,
   getOptionsFromOperations,
   GetStacksTestnetNetwork,
+  isSymbolSupported,
+  isDecimalsSupported,
 } from './../../../rosetta-helpers';
 import {
   createStacksPrivateKey,
@@ -80,6 +82,16 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       return;
     }
 
+    if (isSymbolSupported(req.body.operations)) {
+      res.status(400).json(RosettaErrors.invalidCurrencySymbol);
+      return;
+    }
+
+    if (isDecimalsSupported(req.body.operations)) {
+      res.status(400).json(RosettaErrors.invalidCurrencyDecimals);
+      return;
+    }
+
     if (req.body.metadata.gas_limit) {
       options.gas_limit = req.body.metadata.gas_limit;
     }
@@ -129,13 +141,12 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(RosettaErrors.invalidSender);
       return;
     }
-
-    if (options?.symbol !== 'STX') {
+    if (options?.symbol !== RosettaConstants.symbol) {
       res.status(400).json(RosettaErrors.invalidCurrencySymbol);
       return;
     }
 
-    if (options?.decimals !== 6) {
+    if (options?.decimals !== RosettaConstants.decimals) {
       res.status(400).json(RosettaErrors.invalidCurrencyDecimals);
       return;
     }
