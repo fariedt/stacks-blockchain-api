@@ -10,7 +10,10 @@
       "$ref": "./../../entities/rosetta/rosetta-network-identifier.schema.json"
     },
     "operations": {
-      "$ref": "./../../entities/rosetta/rosetta-operation.schema.json"
+      "type": "array",
+      "items": {
+        "$ref": "./../../entities/rosetta/rosetta-operation.schema.json"
+      }
     },
     "metadata": {
       "type": "object"

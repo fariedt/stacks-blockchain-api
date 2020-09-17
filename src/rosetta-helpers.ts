@@ -6,6 +6,9 @@ import * as c32check from 'c32check';
 
 import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from './helpers';
 import { RosettaOperation, RosettaOptions } from '@blockstack/stacks-blockchain-api-types';
+import { StacksTestnet } from '@blockstack/stacks-transactions';
+
+import { getCoreNodeEndpoint } from '../../../core-rpc/client';
 
 enum CoinAction {
   CoinSpent = 'coin_spent',
@@ -223,4 +226,10 @@ export function getOptionsFromOperations(operations: RosettaOperation[]): Rosett
   };
 
   return options;
+}
+
+export function GetStacksTestnetNetwork() {
+  const stacksNetwork = new StacksTestnet();
+  stacksNetwork.coreApiUrl = `http://${getCoreNodeEndpoint()}`;
+  return stacksNetwork;
 }

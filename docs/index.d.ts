@@ -352,7 +352,7 @@ export interface RosettaConstructionMetadataResponse {
  */
 export interface RosettaConstructionPayloadsRequest {
   network_identifier: NetworkIdentifier;
-  operations: RosettaOperation;
+  operations: RosettaOperation[];
   metadata?: {
     [k: string]: unknown | undefined;
   };

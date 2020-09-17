@@ -23,22 +23,16 @@ import {
   publicKeyToAddress,
   convertToSTXAddress,
   getOptionsFromOperations,
+  GetStacksTestnetNetwork,
 } from './../../../rosetta-helpers';
 import {
   makeUnsignedSTXTokenTransfer,
   UnsignedTokenTransferOptions,
-  StacksTestnet,
 } from '@blockstack/stacks-transactions';
 import { type } from 'os';
 import { isValidC32Address } from '../../../helpers';
 import BN = require('bn.js');
 import { getCoreNodeEndpoint } from '../../../core-rpc/client';
-
-export function GetStacksTestnetNetwork() {
-  const stacksNetwork = new StacksTestnet();
-  stacksNetwork.coreApiUrl = `http://${getCoreNodeEndpoint()}`;
-  return stacksNetwork;
-}
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -157,6 +151,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(RosettaErrors.invalidOperation);
       return;
     }
+
     const recipientAddress = options.token_transfer_recipient_address
       ? options.token_transfer_recipient_address
       : '';
