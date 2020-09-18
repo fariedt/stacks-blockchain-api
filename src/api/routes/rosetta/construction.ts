@@ -161,16 +161,18 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     const accountInfo = await new StacksCoreRpcClient().getAccount(recipientAddress);
     const nonce = accountInfo.nonce;
 
+    var recentBlockHash = '';
     const blockQuery: FoundOrNot<DbBlock> = await db.getCurrentBlock();
-    if (!blockQuery.found) {
-      res.status(400).json(RosettaErrors.blockNotFound);
-      return;
+    if (blockQuery.found) {
+      recentBlockHash = blockQuery.result.block_hash;
     }
 
-    const hash = blockQuery.result.block_hash;
-
     const response: RosettaConstructionMetadataResponse = {
-      metadata: { ...req.body.options, account_sequence: nonce, recent_block_hash: hash },
+      metadata: {
+        ...req.body.options,
+        account_sequence: nonce,
+        recent_block_hash: recentBlockHash,
+      },
     };
 
     res.json(response);
