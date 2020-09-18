@@ -37,7 +37,8 @@ import {
 import { type } from 'os';
 import { isValidC32Address } from '../../../helpers';
 import BN = require('bn.js');
-import { getCoreNodeEndpoint } from '../../../core-rpc/client';
+import { getCoreNodeEndpoint, StacksCoreRpcClient } from '../../../core-rpc/client';
+import { has0xPrefix, FoundOrNot } from '../../../helpers';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -146,20 +147,30 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       return;
     }
 
+    const recipientAddress = options.token_transfer_recipient_address;
     if (options?.decimals !== RosettaConstants.decimals) {
       res.status(400).json(RosettaErrors.invalidCurrencyDecimals);
       return;
     }
 
-    if (
-      options?.token_transfer_recipient_address &&
-      !isValidC32Address(options.token_transfer_recipient_address)
-    ) {
+    if (recipientAddress == null || !isValidC32Address(recipientAddress)) {
       res.status(400).json(RosettaErrors.invalidRecipient);
+      return;
     }
 
+    const accountInfo = await new StacksCoreRpcClient().getAccount(recipientAddress);
+    const nonce = accountInfo.nonce;
+
+    const blockQuery: FoundOrNot<DbBlock> = await db.getCurrentBlock();
+    if (!blockQuery.found) {
+      res.status(400).json(RosettaErrors.blockNotFound);
+      return;
+    }
+
+    const hash = blockQuery.result.block_hash;
+
     const response: RosettaConstructionMetadataResponse = {
-      metadata: { ...req.body.options },
+      metadata: { ...req.body.options, account_sequence: nonce, recent_block_hash: hash },
     };
 
     res.json(response);
