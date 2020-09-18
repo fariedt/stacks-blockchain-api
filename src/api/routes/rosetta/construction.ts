@@ -161,7 +161,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     const accountInfo = await new StacksCoreRpcClient().getAccount(recipientAddress);
     const nonce = accountInfo.nonce;
 
-    var recentBlockHash = '';
+    let recentBlockHash = '';
     const blockQuery: FoundOrNot<DbBlock> = await db.getCurrentBlock();
     if (blockQuery.found) {
       recentBlockHash = blockQuery.result.block_hash;
