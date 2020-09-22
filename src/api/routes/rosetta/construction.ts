@@ -16,6 +16,7 @@ import {
   RosettaConstructionMetadataResponse,
   RosettaConstructionHashResponse,
   RosettaConstructionPayloadsRequest,
+  RosettaConstructionPayloadResponse,
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from './../../rosetta-constants';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from './../../rosetta-validate';
@@ -29,6 +30,7 @@ import {
 } from './../../../rosetta-helpers';
 import {
   createStacksPrivateKey,
+  createStacksPublicKey,
   getPublicKey,
   makeUnsignedSTXTokenTransfer,
   publicKeyToString,
@@ -39,6 +41,8 @@ import { isValidC32Address } from '../../../helpers';
 import BN = require('bn.js');
 import { getCoreNodeEndpoint, StacksCoreRpcClient } from '../../../core-rpc/client';
 import { has0xPrefix, FoundOrNot } from '../../../helpers';
+//import { sha256 } from 'bitcoinjs-lib/types/crypto';
+import * as crypto from 'crypto';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -198,19 +202,40 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       : '';
     const senderAddress = options.sender_address ? options.sender_address : '';
 
+    //createStacksPublicKey(senderAddress);
     //    const publicKey = publicKeyToString(getPublicKey(createStacksPrivateKey(senderAddress)));
 
-    res.json(createStacksPrivateKey('STDE7Y8HV3RX8VBM2TZVWJTS7ZA1XB0SSC3NEVH0'));
-    // const tokenTransferOptions: UnsignedTokenTransferOptions = {
-    //   recipient: recipientAddress,
-    //   amount: options.amount ? new BN(options.amount) : new BN(0),
-    //   fee: options.fee ? new BN(options.fee) : new BN(0),
-    //   publicKey: senderAddress,
-    //   network: GetStacksTestnetNetwork(),
-    // };
+    // res.json(
+    //   createStacksPublicKey('STDE7Y8HV3RX8VBM2TZVWJTS7ZA1XB0SSC3NEVH0').data.toString('hex')
+    // );
+    const tokenTransferOptions: UnsignedTokenTransferOptions = {
+      recipient: recipientAddress,
+      amount: options.amount ? new BN(options.amount) : new BN(0),
+      fee: options.fee ? new BN(options.fee) : new BN(0),
+      publicKey: '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51',
+      network: GetStacksTestnetNetwork(),
+    };
 
-    // const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
-    // res.json(transaction.serialize().toString('hex'));
+    const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
+    const unsignedTransaction = transaction.serialize();
+    const hexBytes = crypto
+      .createHash('sha256')
+      .update(unsignedTransaction)
+      .digest()
+      .slice(16) // TODO: discuss this with fareed bhai
+      .toString('hex');
+
+    const response: RosettaConstructionPayloadResponse = {
+      unsigned_transaction: unsignedTransaction.toString('hex'),
+      payloads: [
+        {
+          address: senderAddress,
+          hex_bytes: '0x' + hexBytes,
+          signature_type: 'ecdsa',
+        },
+      ],
+    };
+    res.json(response);
   });
 
   router.postAsync('/parse', async (req, res) => {});
