@@ -171,6 +171,31 @@ export const RosettaErrors: Record<string, RosettaError> = {
     message: 'Invalid currency decimals',
     retriable: false,
   },
+  emptyPublicKey: {
+    code: 640,
+    message: 'Public key not available',
+    retriable: false,
+  },
+  invalidPublicKey: {
+    code: 641,
+    message: 'Invalid public key',
+    retriable: false,
+  },
+  invalidAmount: {
+    code: 642,
+    message: 'Amount not available',
+    retriable: false,
+  },
+  invalidFees: {
+    code: 643,
+    message: 'Fees not available',
+    retriable: false,
+  },
+  invalidCurveType: {
+    code: 644,
+    message: 'Invalid curve type',
+    retriable: false,
+  },
 };
 
 // All request types, used to validate input.

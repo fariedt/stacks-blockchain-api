@@ -375,7 +375,7 @@ export interface RosettaConstructionPayloadsRequest {
   metadata?: {
     [k: string]: unknown | undefined;
   };
-  public_keys?: RosettaPublicKey;
+  public_keys?: RosettaPublicKey[];
 }
 
 /**
