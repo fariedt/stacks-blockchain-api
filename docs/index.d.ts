@@ -367,6 +367,33 @@ export interface RosettaConstructionMetadataResponse {
 }
 
 /**
+ * Parse is called on both unsigned and signed transactions to understand the intent of the formulated transaction. This is run as a sanity check before signing (after /construction/payloads) and before broadcast (after /construction/combine).
+ */
+export interface RosettaConstructionParseRequest {
+  network_identifier: NetworkIdentifier;
+  /**
+   * Signed is a boolean indicating whether the transaction is signed.
+   */
+  signed: boolean;
+  /**
+   * This must be either the unsigned transaction blob returned by /construction/payloads or the signed transaction blob returned by /construction/combine.
+   */
+  transaction: string;
+}
+
+/**
+ * RosettaConstructionParseResponse contains an array of operations that occur in a transaction blob. This should match the array of operations provided to /construction/preprocess and /construction/payloads.
+ */
+export interface RosettaConstructionParseResponse {
+  operations: RosettaOperation[];
+  /**
+   * [DEPRECATED by account_identifier_signers in v1.4.4] All signers (addresses) of a particular transaction. If the transaction is unsigned, it should be empty.
+   */
+  signers: string[];
+  account_identifier_signers: RosettaAccountIdentifier[];
+}
+
+/**
  * ConstructionPayloadsRequest is the request to /construction/payloads. It contains the network, a slice of operations, and arbitrary metadata that was returned by the call to /construction/metadata. Optionally, the request can also include an array of PublicKeys associated with the AccountIdentifiers returned in ConstructionPreprocessResponse.
  */
 export interface RosettaConstructionPayloadsRequest {
@@ -924,6 +951,23 @@ export type PostConditionType = "stx" | "non_fungible" | "fungible";
  * Post-conditionscan limit the damage done to a user's assets
  */
 export type PostCondition = PostConditionStx | PostConditionFungible | PostConditionNonFungible;
+
+/**
+ * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
+ */
+export interface RosettaAccountIdentifier {
+  /**
+   * The address may be a cryptographic public key (or some encoding of it) or a provided username.
+   */
+  address: string;
+  sub_account?: RosettaSubAccount;
+  /**
+   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
 
 /**
  * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
