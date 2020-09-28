@@ -211,6 +211,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(makeRosettaError(valid));
       return;
     }
+
     const inputTx = req.body.transaction;
     const singed = req.body.signed;
     const transaction = rawTxToStacksTransaction(inputTx);

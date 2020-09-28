@@ -389,8 +389,8 @@ export interface RosettaConstructionParseResponse {
   /**
    * [DEPRECATED by account_identifier_signers in v1.4.4] All signers (addresses) of a particular transaction. If the transaction is unsigned, it should be empty.
    */
-  signers: string[];
-  account_identifier_signers: RosettaAccountIdentifier[];
+  signers?: string[];
+  account_identifier_signers?: RosettaAccountIdentifier[];
 }
 
 /**
