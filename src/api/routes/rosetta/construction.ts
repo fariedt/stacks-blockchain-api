@@ -22,8 +22,11 @@ import {
   isDecimalsSupported,
   rawTxToBaseTx,
   getOperations,
+  rawTxToStacksTransaction,
+  isSignedTransaction,
 } from './../../../rosetta-helpers';
 import { createStacksPrivateKey } from '@blockstack/stacks-transactions';
+import { isSingleSig, SpendingCondition } from '@blockstack/stacks-transactions/lib/authorization';
 import { isValidC32Address } from '../../../helpers';
 import BN = require('bn.js');
 import { getCoreNodeEndpoint, StacksCoreRpcClient } from '../../../core-rpc/client';
@@ -209,6 +212,13 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       return;
     }
     const inputTx = req.body.transaction;
+    const singed = req.body.signed;
+    const transaction = rawTxToStacksTransaction(inputTx);
+    const checkSigned = isSignedTransaction(transaction);
+    if (singed != checkSigned) {
+      res.status(400).json(RosettaErrors.invalidParams);
+      return;
+    }
     const operations = getOperations(rawTxToBaseTx(inputTx));
     res.json({
       operations: operations,

@@ -2,16 +2,25 @@ import { BaseTx, DbTxStatus, DbTxTypeId } from './datastore/common';
 import { getTxTypeString, getTxStatusString } from './api/controllers/db-controller';
 import * as btc from 'bitcoinjs-lib';
 import * as c32check from 'c32check';
-import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from './helpers';
+import {
+  assertNotNullish as unwrapOptional,
+  bufferToHexPrefixString,
+  hexToBuffer,
+} from './helpers';
 import { RosettaOperation, RosettaOptions } from '@blockstack/stacks-blockchain-api-types';
-import { StacksTestnet } from '@blockstack/stacks-transactions';
+import { StacksTestnet, StacksTransaction } from '@blockstack/stacks-transactions';
 import { txidFromData } from '@blockstack/stacks-transactions/lib/utils';
+import { deserializeTransaction } from '@blockstack/stacks-transactions/lib/transaction';
+import {
+  isSingleSig,
+  emptyMessageSignature,
+} from '@blockstack/stacks-transactions/lib/authorization';
+import { BufferReader } from '@blockstack/stacks-transactions/lib/bufferReader';
 import { getCoreNodeEndpoint } from './core-rpc/client';
 import { getTxSenderAddress, getTxSponsorAddress } from './event-stream/reader';
 import { readTransaction, TransactionPayloadTypeID } from './p2p/tx';
 import { RosettaConstants } from './api/rosetta-constants';
 import { addressToString } from '@blockstack/stacks-transactions/lib/types';
-import { BufferReader } from './binary-reader';
 
 enum CoinAction {
   CoinSpent = 'coin_spent',
@@ -32,6 +41,33 @@ export function convertToSTXAddress(btcAddress: string): string {
   return c32check.b58ToC32(btcAddress);
 }
 
+export function rawTxToStacksTransaction(raw_tx: string): StacksTransaction {
+  const buffer = hexToBuffer(raw_tx);
+  let transaction: StacksTransaction = deserializeTransaction(BufferReader.fromBuffer(buffer));
+  return transaction;
+}
+
+export function isSignedTransaction(transaction: StacksTransaction): Boolean {
+  if (!transaction.auth.spendingCondition) {
+    return false;
+  }
+  if (isSingleSig(transaction.auth.spendingCondition)) {
+    /**Single signature Transaction has an empty signature, so the transaction is not signed */
+    if (
+      !transaction.auth.spendingCondition.signature.data ||
+      emptyMessageSignature().data === transaction.auth.spendingCondition.signature.data
+    ) {
+      return false;
+    }
+  } else {
+    /**Multi-signature transaction does not have signature fields thus the transaction not signed */
+    if (transaction.auth.spendingCondition.fields.length === 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function rawTxToBaseTx(raw_tx: string): BaseTx {
   const txBuffer = Buffer.from(raw_tx.substring(2), 'hex');
   const txId = '0x' + txidFromData(txBuffer);
@@ -42,7 +78,7 @@ export function rawTxToBaseTx(raw_tx: string): BaseTx {
   const payload: any = transaction.payload;
   const fee = transaction.auth.originCondition.feeRate;
   const amount = payload.amount;
-
+  transaction.auth.originCondition;
   const recipientAddr =
     payload.recipient && payload.recipient.address
       ? addressToString({
