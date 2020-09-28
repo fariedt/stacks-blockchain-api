@@ -89,6 +89,13 @@ describe('Rosetta API', () => {
           { code: 616, message: 'Transaction identifier is null.', retriable: true },
           { code: 617, message: 'Blockchain name is null.', retriable: true },
           { code: 618, message: 'Network name is null.', retriable: true },
+          { code: 619, message: 'Invalid transaction type', retriable: false },
+          { code: 620, message: 'Invalid sender address', retriable: false },
+          { code: 621, message: 'Invalid recipient address', retriable: false },
+          { code: 622, message: 'Invalid operation', retriable: false },
+          { code: 623, message: 'Invalid fee', retriable: false },
+          { code: 624, message: 'Invalid symbol', retriable: false },
+          { code: 625, message: 'Invalid currency decimals', retriable: false },
         ],
         historical_balance_lookup: true,
       },
@@ -259,6 +266,7 @@ describe('Rosetta API', () => {
       .post(`/rosetta/v1/block`)
       .send({
         network_identifier: { blockchain: 'stacks', network: 'testnet' },
+        block_identifier: { hash: block.result.block_hash, index: block.result.block_height },
       });
     expect(query1.status).toBe(200);
     expect(query1.type).toBe('application/json');

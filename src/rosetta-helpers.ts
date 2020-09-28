@@ -1,16 +1,17 @@
-import { DbMempoolTx, DbTx } from './datastore/common';
+import { BaseTx, DbTxStatus, DbTxTypeId } from './datastore/common';
 import { getTxTypeString, getTxStatusString } from './api/controllers/db-controller';
-
 import * as btc from 'bitcoinjs-lib';
 import * as c32check from 'c32check';
-
 import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from './helpers';
 import { RosettaOperation, RosettaOptions } from '@blockstack/stacks-blockchain-api-types';
 import { StacksTestnet } from '@blockstack/stacks-transactions';
-
+import { txidFromData } from '@blockstack/stacks-transactions/lib/utils';
 import { getCoreNodeEndpoint } from './core-rpc/client';
-
+import { getTxSenderAddress, getTxSponsorAddress } from './event-stream/reader';
+import { readTransaction, TransactionPayloadTypeID } from './p2p/tx';
 import { RosettaConstants } from './api/rosetta-constants';
+import { addressToString } from '@blockstack/stacks-transactions/lib/types';
+import { BufferReader } from './binary-reader';
 
 enum CoinAction {
   CoinSpent = 'coin_spent',
@@ -31,7 +32,61 @@ export function convertToSTXAddress(btcAddress: string): string {
   return c32check.b58ToC32(btcAddress);
 }
 
-export function getOperations(tx: DbMempoolTx | DbTx): RosettaOperation[] {
+export function rawTxToBaseTx(raw_tx: string): BaseTx {
+  const txBuffer = Buffer.from(raw_tx.substring(2), 'hex');
+  const txId = '0x' + txidFromData(txBuffer);
+  const bufferReader = BufferReader.fromBuffer(txBuffer);
+  const transaction = readTransaction(bufferReader);
+  const txSender = getTxSenderAddress(transaction);
+  const sponsorAddress = getTxSponsorAddress(transaction);
+  const payload: any = transaction.payload;
+  const fee = transaction.auth.originCondition.feeRate;
+  const amount = payload.amount;
+
+  const recipientAddr =
+    payload.recipient && payload.recipient.address
+      ? addressToString({
+          type: payload.recipient.typeId,
+          version: payload.recipient.address.version,
+          hash160: payload.recipient.address.bytes.toString('hex'),
+        })
+      : '';
+  const sponsored = sponsorAddress ? true : false;
+
+  let transactionType = DbTxTypeId.TokenTransfer;
+  switch (transaction.payload.typeId) {
+    case TransactionPayloadTypeID.TokenTransfer:
+      transactionType = DbTxTypeId.TokenTransfer;
+      break;
+    case TransactionPayloadTypeID.SmartContract:
+      transactionType = DbTxTypeId.SmartContract;
+      break;
+    case TransactionPayloadTypeID.ContractCall:
+      transactionType = DbTxTypeId.ContractCall;
+      break;
+    case TransactionPayloadTypeID.Coinbase:
+      transactionType = DbTxTypeId.Coinbase;
+      break;
+    case TransactionPayloadTypeID.PoisonMicroblock:
+      transactionType = DbTxTypeId.PoisonMicroblock;
+      break;
+  }
+  const dbtx: BaseTx = {
+    token_transfer_recipient_address: recipientAddr,
+    tx_id: txId,
+    type_id: transactionType,
+    status: DbTxStatus.Pending,
+    fee_rate: fee,
+    sender_address: txSender,
+    token_transfer_amount: amount,
+    sponsored: sponsored,
+    sponsor_address: sponsorAddress,
+  };
+
+  return dbtx;
+}
+
+export function getOperations(tx: BaseTx): RosettaOperation[] {
   const operations: RosettaOperation[] = [];
   const txType = getTxTypeString(tx.type_id);
   switch (txType) {
@@ -60,12 +115,15 @@ export function getOperations(tx: DbMempoolTx | DbTx): RosettaOperation[] {
   return operations;
 }
 
-function makeFeeOperation(tx: DbMempoolTx | DbTx): RosettaOperation {
+function makeFeeOperation(tx: BaseTx): RosettaOperation {
+  const address = tx.sponsored
+    ? unwrapOptional(tx.sponsor_address, () => 'Unexpected nullish sponsor signer')
+    : tx.sender_address;
   const fee: RosettaOperation = {
     operation_identifier: { index: 0 },
     type: 'fee',
     status: getTxStatusString(tx.status),
-    account: { address: tx.sender_address },
+    account: { address: address },
     amount: {
       value: (BigInt(0) - tx.fee_rate).toString(10),
       currency: { symbol: 'STX', decimals: 6 },
@@ -75,7 +133,7 @@ function makeFeeOperation(tx: DbMempoolTx | DbTx): RosettaOperation {
   return fee;
 }
 
-function makeSenderOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperation {
+function makeSenderOperation(tx: BaseTx, index: number): RosettaOperation {
   const sender: RosettaOperation = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
@@ -101,7 +159,7 @@ function makeSenderOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOper
   return sender;
 }
 
-function makeReceiverOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperation {
+function makeReceiverOperation(tx: BaseTx, index: number): RosettaOperation {
   const receiver: RosettaOperation = {
     operation_identifier: { index: index },
     related_operations: [{ index: 0, operation_identifier: { index: 1 } }],
@@ -129,7 +187,7 @@ function makeReceiverOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOp
   return receiver;
 }
 
-function makeDeployContractOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperation {
+function makeDeployContractOperation(tx: BaseTx, index: number): RosettaOperation {
   const deployer: RosettaOperation = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
@@ -142,7 +200,7 @@ function makeDeployContractOperation(tx: DbMempoolTx | DbTx, index: number): Ros
   return deployer;
 }
 
-function makeCallContractOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperation {
+function makeCallContractOperation(tx: BaseTx, index: number): RosettaOperation {
   const caller: RosettaOperation = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
@@ -164,7 +222,7 @@ function makeCallContractOperation(tx: DbMempoolTx | DbTx, index: number): Roset
 
   return caller;
 }
-function makeCoinbaseOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperation {
+function makeCoinbaseOperation(tx: BaseTx, index: number): RosettaOperation {
   // TODO : Add more mappings in operations for coinbase
   const sender: RosettaOperation = {
     operation_identifier: { index: index },
@@ -178,7 +236,7 @@ function makeCoinbaseOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOp
   return sender;
 }
 
-function makePoisonMicroblockOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperation {
+function makePoisonMicroblockOperation(tx: BaseTx, index: number): RosettaOperation {
   // TODO : add more mappings in operations for poison-microblock
   const sender: RosettaOperation = {
     operation_identifier: { index: index },

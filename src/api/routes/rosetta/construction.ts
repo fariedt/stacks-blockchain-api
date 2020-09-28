@@ -2,20 +2,14 @@ import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import { DataStore, DbBlock } from '../../../datastore/common';
 import {
-  NetworkIdentifier,
-  RosettaAccount,
-  RosettaBlockIdentifier,
-  RosettaAccountBalanceResponse,
   RosettaPublicKey,
   RosettaConstructionDeriveResponse,
   RosettaConstructionPreprocessResponse,
   RosettaOperation,
   RosettaMaxFeeAmount,
-  RosettaConstructionPreprocessRequest,
   RosettaOptions,
   RosettaConstructionMetadataResponse,
   RosettaConstructionHashResponse,
-  RosettaConstructionPayloadsRequest,
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from './../../rosetta-constants';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from './../../rosetta-validate';
@@ -26,19 +20,14 @@ import {
   GetStacksTestnetNetwork,
   isSymbolSupported,
   isDecimalsSupported,
+  rawTxToBaseTx,
+  getOperations,
 } from './../../../rosetta-helpers';
-import {
-  createStacksPrivateKey,
-  getPublicKey,
-  makeUnsignedSTXTokenTransfer,
-  publicKeyToString,
-  UnsignedTokenTransferOptions,
-} from '@blockstack/stacks-transactions';
-import { type } from 'os';
+import { createStacksPrivateKey } from '@blockstack/stacks-transactions';
 import { isValidC32Address } from '../../../helpers';
 import BN = require('bn.js');
 import { getCoreNodeEndpoint, StacksCoreRpcClient } from '../../../core-rpc/client';
-import { has0xPrefix, FoundOrNot } from '../../../helpers';
+import { FoundOrNot } from '../../../helpers';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -213,7 +202,18 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     // res.json(transaction.serialize().toString('hex'));
   });
 
-  router.postAsync('/parse', async (req, res) => {});
+  router.postAsync('/parse', async (req, res) => {
+    const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
+    if (!valid.valid) {
+      res.status(400).json(makeRosettaError(valid));
+      return;
+    }
+    const inputTx = req.body.transaction;
+    const operations = getOperations(rawTxToBaseTx(inputTx));
+    res.json({
+      operations: operations,
+    });
+  });
 
   router.postAsync('/combine', async (req, res) => {});
 
