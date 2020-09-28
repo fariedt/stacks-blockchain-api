@@ -7,6 +7,7 @@ import {
   RosettaConstructionDeriveResponse,
   RosettaConstructionMetadataRequest,
   RosettaConstructionMetadataResponse,
+  RosettaConstructionPayloadsRequest,
   RosettaConstructionPreprocessRequest,
   RosettaConstructionPreprocessResponse,
 } from '@blockstack/stacks-blockchain-api-types';
@@ -469,6 +470,294 @@ describe('Rosetta API', () => {
     };
 
     expect(JSON.parse(result.text)).toEqual(expectResponse);
+  });
+
+  test('payloads success', async () => {
+    const request: RosettaConstructionPayloadsRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      operations: [
+        {
+          operation_identifier: {
+            index: 0,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'fee',
+          status: 'success',
+          account: {
+            address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+            metadata: {},
+          },
+          amount: {
+            value: '-180',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+        {
+          operation_identifier: {
+            index: 1,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'token_transfer',
+          status: 'success',
+          account: {
+            address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+            metadata: {},
+          },
+          amount: {
+            value: '-500000',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+        {
+          operation_identifier: {
+            index: 2,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'token_transfer',
+          status: 'success',
+          account: {
+            address: 'STDE7Y8HV3RX8VBM2TZVWJTS7ZA1XB0SSC3NEVH0',
+            metadata: {},
+          },
+          amount: {
+            value: '500000',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+      ],
+      metadata: {},
+      public_keys: [
+        {
+          hex_bytes: '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51',
+          curve_type: 'secp256k1',
+        },
+      ],
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/payloads`)
+      .send(request);
+
+    expect(result.status).toBe(200);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse = {
+      unsigned_transaction:
+        '80800000000400539886f96611ba3ba6cef9618f8c78118b37c5be000000000000000000000000000000b400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003020000000000051a1ae3f911d8f1d46d7416bfbe4b593fd41eac19cb000000000007a12000000000000000000000000000000000000000000000000000000000000000000000',
+      payloads: [
+        {
+          address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+          hex_bytes: '0xf1e432494d509577c5468a8cad70d957942e2671f299340a20f65992a4bfa221',
+          signature_type: 'ecdsa',
+        },
+      ],
+    };
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
+  });
+
+  test('payloads public key not added', async () => {
+    const request: RosettaConstructionPayloadsRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      operations: [
+        {
+          operation_identifier: {
+            index: 0,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'fee',
+          status: 'success',
+          account: {
+            address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+            metadata: {},
+          },
+          amount: {
+            value: '-180',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+        {
+          operation_identifier: {
+            index: 1,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'token_transfer',
+          status: 'success',
+          account: {
+            address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+            metadata: {},
+          },
+          amount: {
+            value: '-500000',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+        {
+          operation_identifier: {
+            index: 2,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'token_transfer',
+          status: 'success',
+          account: {
+            address: 'STDE7Y8HV3RX8VBM2TZVWJTS7ZA1XB0SSC3NEVH0',
+            metadata: {},
+          },
+          amount: {
+            value: '500000',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+      ],
+      metadata: {},
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/payloads`)
+      .send(request);
+
+    expect(result.status).toBe(400);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse = {
+      code: 640,
+      message: 'Public key not available',
+      retriable: false,
+    };
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
+  });
+
+  test('payloads public key invalid curve type', async () => {
+    const request: RosettaConstructionPayloadsRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      operations: [
+        {
+          operation_identifier: {
+            index: 0,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'fee',
+          status: 'success',
+          account: {
+            address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+            metadata: {},
+          },
+          amount: {
+            value: '-180',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+        {
+          operation_identifier: {
+            index: 1,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'token_transfer',
+          status: 'success',
+          account: {
+            address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+            metadata: {},
+          },
+          amount: {
+            value: '-500000',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+        {
+          operation_identifier: {
+            index: 2,
+            network_index: 0,
+          },
+          related_operations: [],
+          type: 'token_transfer',
+          status: 'success',
+          account: {
+            address: 'STDE7Y8HV3RX8VBM2TZVWJTS7ZA1XB0SSC3NEVH0',
+            metadata: {},
+          },
+          amount: {
+            value: '500000',
+            currency: {
+              symbol: 'STX',
+              decimals: 6,
+            },
+            metadata: {},
+          },
+        },
+      ],
+      metadata: {},
+      public_keys: [
+        {
+          hex_bytes: '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51',
+          curve_type: 'edwards25519',
+        },
+      ],
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/payloads`)
+      .send(request);
+
+    expect(result.status).toBe(400);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse = {
+      code: 644,
+      message: 'Invalid curve type',
+      retriable: false,
+    };
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
   });
 
   afterAll(async () => {
