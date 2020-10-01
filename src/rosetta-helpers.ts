@@ -1,5 +1,7 @@
 import { DbMempoolTx, DbTx } from './datastore/common';
 import { getTxTypeString, getTxStatusString } from './api/controllers/db-controller';
+import { createMessageSignature } from '@blockstack/stacks-transactions/lib/authorization';
+import { parseRecoverableSignature } from '@blockstack/stacks-transactions';
 
 import * as btc from 'bitcoinjs-lib';
 import * as c32check from 'c32check';
@@ -16,6 +18,7 @@ import { ec as EC } from 'elliptic';
 import { getCoreNodeEndpoint } from './core-rpc/client';
 
 import { RosettaConstants } from './api/rosetta-constants';
+import { ripemd160 } from 'bitcoinjs-lib/types/crypto';
 
 enum CoinAction {
   CoinSpent = 'coin_spent',
@@ -261,10 +264,25 @@ export function GetStacksTestnetNetwork() {
   return stacksNetwork;
 }
 
-export function verifySignature(message: Buffer, publicAddress: string, signature: string) {
+export function verifySignature(
+  message: string,
+  publicAddress: string,
+  signature: string
+): boolean {
   const ec = new EC('secp256k1');
-  const messageHash = digestSha512_256(message);
+  // const messageHash = digestSha512_256(message);
+  const sig = createMessageSignature(signature);
+  // const m = signature.match(/([a-f\d]{64})/gi);
+
+  // if (!m) return false;
+  // const RSsignature = {
+  //   r: m[0],
+  //   s: m[1],
+  // };
+
+  const { r, s } = parseRecoverableSignature(sig.data);
+
   const publicKeyPair = ec.keyFromPublic(publicAddress, 'hex'); // use the accessible public key to verify the signature
-  const isVerified = publicKeyPair.verify(messageHash, signature);
+  const isVerified = publicKeyPair.verify(message, { r, s });
   return isVerified;
 }
