@@ -4,9 +4,14 @@ import { getTxTypeString, getTxStatusString } from './api/controllers/db-control
 import * as btc from 'bitcoinjs-lib';
 import * as c32check from 'c32check';
 
-import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from './helpers';
+import {
+  assertNotNullish as unwrapOptional,
+  bufferToHexPrefixString,
+  digestSha512_256,
+} from './helpers';
 import { RosettaOperation, RosettaOptions } from '@blockstack/stacks-blockchain-api-types';
 import { StacksTestnet } from '@blockstack/stacks-transactions';
+import { ec as EC } from 'elliptic';
 
 import { getCoreNodeEndpoint } from './core-rpc/client';
 
@@ -254,4 +259,12 @@ export function GetStacksTestnetNetwork() {
   const stacksNetwork = new StacksTestnet();
   stacksNetwork.coreApiUrl = `http://${getCoreNodeEndpoint()}`;
   return stacksNetwork;
+}
+
+export function verifySignature(message: Buffer, publicAddress: string, signature: string) {
+  const ec = new EC('secp256k1');
+  const messageHash = digestSha512_256(message);
+  const publicKeyPair = ec.keyFromPublic(publicAddress, 'hex'); // use the accessible public key to verify the signature
+  const isVerified = publicKeyPair.verify(messageHash, signature);
+  return isVerified;
 }

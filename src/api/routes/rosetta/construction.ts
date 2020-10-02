@@ -17,6 +17,7 @@ import {
   RosettaConstructionHashResponse,
   RosettaConstructionPayloadsRequest,
   RosettaConstructionPayloadResponse,
+  RosettaConstructionCombineRequest,
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from './../../rosetta-constants';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from './../../rosetta-validate';
@@ -27,6 +28,7 @@ import {
   GetStacksTestnetNetwork,
   isSymbolSupported,
   isDecimalsSupported,
+  verifySignature,
 } from './../../../rosetta-helpers';
 import {
   createStacksPrivateKey,
@@ -37,12 +39,15 @@ import {
   UnsignedTokenTransferOptions,
 } from '@blockstack/stacks-transactions';
 import { type } from 'os';
-import { digestSha512_256, isValidC32Address } from '../../../helpers';
+import { digestSha512_256, hexToBuffer, isValidC32Address } from '../../../helpers';
 import * as BN from 'bn.js';
 import { getCoreNodeEndpoint, StacksCoreRpcClient } from '../../../core-rpc/client';
 import { has0xPrefix, FoundOrNot } from '../../../helpers';
 import * as crypto from 'crypto';
 import { RESTClient } from 'rpc-bitcoin';
+import { deserializeTransaction } from '@blockstack/stacks-transactions/lib/transaction';
+import { BufferReader } from '@blockstack/stacks-transactions/lib/bufferReader';
+import { isSingleSig } from '@blockstack/stacks-transactions/lib/authorization';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -252,7 +257,51 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
   router.postAsync('/parse', async (req, res) => {});
 
-  router.postAsync('/combine', async (req, res) => {});
+  router.postAsync('/combine', async (req, res) => {
+    const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
+    if (!valid.valid) {
+      res.status(400).json(makeRosettaError(valid));
+      return;
+    }
+
+    const combineRequest: RosettaConstructionCombineRequest = req.body;
+    const unsigned_transaction_buffer = hexToBuffer(combineRequest.unsigned_transaction);
+    const signed_hex_bytes = combineRequest.signatures[0].signing_payload.hex_bytes;
+
+    //** public key verification */
+
+    const transaction = deserializeTransaction(
+      BufferReader.fromBuffer(unsigned_transaction_buffer)
+    );
+
+    // res.status(200).json({ transaction: transaction });
+    // return;
+
+    
+    if (
+      verifySignature(
+        unsigned_transaction_buffer,
+        combineRequest.signatures[0].public_key.hex_bytes,
+        combineRequest.signatures[0].hex_bytes
+      )
+    ) {
+      res.status(200).json({ singnature_verification: 'signature verified' });
+    } else {
+      res.status(200).json({ singnature_verification: 'signature unverfied' });
+    }
+
+    if (!transaction.auth.spendingCondition) {
+      res.status(400).json(RosettaErrors.inalidTransaction);
+
+      return;
+    }
+
+    if (isSingleSig(transaction.auth.spendingCondition)) {
+      transaction.auth.spendingCondition.signature.data =
+        combineRequest.signatures[0].public_key.hex_bytes;
+    } else {
+    }
+  });
 
   router.postAsync('/hash', async (req, res) => {
     const valid: ValidSchema = await rosettaValidateRequest(req.originalUrl, req.body);
