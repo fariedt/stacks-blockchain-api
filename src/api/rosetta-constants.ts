@@ -196,6 +196,26 @@ export const RosettaErrors: Record<string, RosettaError> = {
     message: 'Invalid curve type',
     retriable: false,
   },
+  invalidTransactionString: {
+    code: 645,
+    message: 'invalid transaction string',
+    retriable: false,
+  },
+  noSignatures: {
+    code: 646,
+    message: 'no signature found',
+    retriable: false,
+  },
+  invalidSignature: {
+    code: 647,
+    message: 'Invalid Signature',
+    retriable: false,
+  },
+  signatureNotVerified: {
+    code: 648,
+    message: 'Signature(s) not verified with this public key(s)',
+    retriable: false,
+  },
 };
 
 // All request types, used to validate input.

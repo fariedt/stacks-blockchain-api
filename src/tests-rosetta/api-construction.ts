@@ -3,6 +3,8 @@ import { PoolClient } from 'pg';
 import { ApiServer, startApiServer } from '../api/init';
 import * as supertest from 'supertest';
 import {
+  RosettaConstructionCombineRequest,
+  RosettaConstructionCombineResponse,
   RosettaConstructionDeriveRequest,
   RosettaConstructionDeriveResponse,
   RosettaConstructionMetadataRequest,
@@ -756,6 +758,197 @@ describe('Rosetta API', () => {
       message: 'Invalid curve type',
       retriable: false,
     };
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
+  });
+
+  test('combine success', async () => {
+    const request: RosettaConstructionCombineRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      unsigned_transaction:
+        '80800000000400539886f96611ba3ba6cef9618f8c78118b37c5be000000000000000000000000000000b4000136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f03020000000000051ab71a091b4b8b7661a661c620966ab6573bc2dcd3000000000007a12074657374207472616e73616374696f6e000000000000000000000000000000000000',
+      signatures: [
+        {
+          signing_payload: {
+            hex_bytes:
+              '0136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f',
+            signature_type: 'ecdsa',
+          },
+          public_key: {
+            hex_bytes: '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51',
+            curve_type: 'secp256k1',
+          },
+          signature_type: 'ecdsa',
+          hex_bytes:
+            '0136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f',
+        },
+      ],
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/combine`)
+      .send(request);
+
+    expect(result.status).toBe(200);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse: RosettaConstructionCombineResponse = {
+      signed_transaction:
+        '80800000000400539886f96611ba3ba6cef9618f8c78118b37c5be000000000000000000000000000000b4000136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f03020000000000051ab71a091b4b8b7661a661c620966ab6573bc2dcd3000000000007a12074657374207472616e73616374696f6e000000000000000000000000000000000000',
+    };
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
+  });
+
+  test('combine invalid transaction', async () => {
+    const request: RosettaConstructionCombineRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      unsigned_transaction: 'invalid transaction',
+      signatures: [
+        {
+          signing_payload: {
+            hex_bytes:
+              '0136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f',
+            signature_type: 'ecdsa',
+          },
+          public_key: {
+            hex_bytes: '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51',
+            curve_type: 'secp256k1',
+          },
+          signature_type: 'ecdsa',
+          hex_bytes:
+            '0136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f',
+        },
+      ],
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/combine`)
+      .send(request);
+
+    expect(result.status).toBe(200);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse = RosettaErrors.invalidTransactionString;
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
+  });
+
+  test('combine invalid signature', async () => {
+    const request: RosettaConstructionCombineRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      unsigned_transaction:
+        '00000000010400539886f96611ba3ba6cef9618f8c78118b37c5be0000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003020000000000051ab71a091b4b8b7661a661c620966ab6573bc2dcd3000000000007a12074657374207472616e73616374696f6e000000000000000000000000000000000000',
+      signatures: [
+        {
+          signing_payload: {
+            hex_bytes: 'invalid signature',
+            signature_type: 'ecdsa',
+          },
+          public_key: {
+            hex_bytes: '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51',
+            curve_type: 'secp256k1',
+          },
+          signature_type: 'ecdsa',
+          hex_bytes:
+            '0136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f',
+        },
+      ],
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/combine`)
+      .send(request);
+
+    expect(result.status).toBe(400);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse = RosettaErrors.invalidTransactionString;
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
+  });
+
+  test('combine signature not verified', async () => {
+    const request: RosettaConstructionCombineRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      unsigned_transaction:
+        '80800000000400539886f96611ba3ba6cef9618f8c78118b37c5be000000000000000000000000000000b4000136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f03020000000000051ab71a091b4b8b7661a661c620966ab6573bc2dcd3000000000007a12074657374207472616e73616374696f6e000000000000000000000000000000000000',
+      signatures: [
+        {
+          signing_payload: {
+            hex_bytes:
+              '017a33a91515ef48608a99c6adecd2eb258e11534a1acf66348f5678c8e2c8f83d243555ed67a0019d3500df98563ca31321c1a675b43ef79f146e322fe08df751',
+            signature_type: 'ecdsa',
+          },
+          public_key: {
+            hex_bytes: '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51',
+            curve_type: 'secp256k1',
+          },
+          signature_type: 'ecdsa',
+          hex_bytes:
+            '017a33a91515ef48608a99c6adecd2eb258e11534a1acf66348f5678c8e2c8f83d243555ed67a0019d3500df98563ca31321c1a675b43ef79f146e322fe08df751',
+        },
+      ],
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/combine`)
+      .send(request);
+
+    expect(result.status).toBe(400);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse = RosettaErrors.signatureNotVerified;
+
+    expect(JSON.parse(result.text)).toEqual(expectedResponse);
+  });
+
+  test('combine invalid public key', async () => {
+    const request: RosettaConstructionCombineRequest = {
+      network_identifier: {
+        blockchain: 'stacks',
+        network: 'testnet',
+      },
+      unsigned_transaction:
+        '80800000000400539886f96611ba3ba6cef9618f8c78118b37c5be000000000000000000000000000000b4000136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f03020000000000051ab71a091b4b8b7661a661c620966ab6573bc2dcd3000000000007a12074657374207472616e73616374696f6e000000000000000000000000000000000000',
+      signatures: [
+        {
+          signing_payload: {
+            hex_bytes:
+              '0136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f',
+            signature_type: 'ecdsa',
+          },
+          public_key: {
+            hex_bytes: 'invalid  public key',
+            curve_type: 'secp256k1',
+          },
+          signature_type: 'ecdsa',
+          hex_bytes:
+            '0136212600bf7463399a23c398f29ca7006b9986b4a01129dd7c6e89314607208e516b0b28c1d850fe6e164abea7b6cceb4aa09700a6d218d1b605d4a402d3038f',
+        },
+      ],
+    };
+
+    const result = await supertest(api.server)
+      .post(`/rosetta/v1/construction/combine`)
+      .send(request);
+
+    expect(result.status).toBe(400);
+    expect(result.type).toBe('application/json');
+
+    const expectedResponse = RosettaErrors.signatureNotVerified;
 
     expect(JSON.parse(result.text)).toEqual(expectedResponse);
   });

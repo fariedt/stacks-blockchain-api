@@ -1,7 +1,11 @@
 import { DbMempoolTx, DbTx } from './datastore/common';
 import { getTxTypeString, getTxStatusString } from './api/controllers/db-controller';
-import { createMessageSignature } from '@blockstack/stacks-transactions/lib/authorization';
-import { parseRecoverableSignature } from '@blockstack/stacks-transactions';
+import {
+  createMessageSignature,
+  makeSigHashPreSign,
+  MessageSignature,
+} from '@blockstack/stacks-transactions/lib/authorization';
+import { parseRecoverableSignature, StacksTransaction } from '@blockstack/stacks-transactions';
 
 import * as btc from 'bitcoinjs-lib';
 import * as c32check from 'c32check';
@@ -267,22 +271,29 @@ export function GetStacksTestnetNetwork() {
 export function verifySignature(
   message: string,
   publicAddress: string,
-  signature: string
+  signature: MessageSignature
 ): boolean {
-  const ec = new EC('secp256k1');
-  // const messageHash = digestSha512_256(message);
-  const sig = createMessageSignature(signature);
-  // const m = signature.match(/([a-f\d]{64})/gi);
+  const { r, s } = parseRecoverableSignature(signature.data);
 
-  // if (!m) return false;
-  // const RSsignature = {
-  //   r: m[0],
-  //   s: m[1],
-  // };
+  try {
+    const ec = new EC('secp256k1');
+    const publicKeyPair = ec.keyFromPublic(publicAddress, 'hex'); // use the accessible public key to verify the signature
+    const isVerified = publicKeyPair.verify(message, { r, s });
+    return isVerified;
+  } catch (error) {
+    return false;
+  }
+}
 
-  const { r, s } = parseRecoverableSignature(sig.data);
+export function makePresignHash(transaction: StacksTransaction): string | undefined {
+  if (!transaction.auth.authType || !transaction.auth.spendingCondition?.nonce) {
+    return undefined;
+  }
 
-  const publicKeyPair = ec.keyFromPublic(publicAddress, 'hex'); // use the accessible public key to verify the signature
-  const isVerified = publicKeyPair.verify(message, { r, s });
-  return isVerified;
+  return makeSigHashPreSign(
+    transaction.verifyBegin(),
+    transaction.auth.authType,
+    transaction.auth.spendingCondition?.fee,
+    transaction.auth.spendingCondition?.nonce
+  );
 }

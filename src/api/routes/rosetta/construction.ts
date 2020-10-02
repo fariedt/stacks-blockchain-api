@@ -18,6 +18,7 @@ import {
   RosettaConstructionPayloadsRequest,
   RosettaConstructionPayloadResponse,
   RosettaConstructionCombineRequest,
+  RosettaConstructionCombineResponse,
 } from '@blockstack/stacks-blockchain-api-types';
 import { RosettaErrors, RosettaConstants } from './../../rosetta-constants';
 import { rosettaValidateRequest, ValidSchema, makeRosettaError } from './../../rosetta-validate';
@@ -29,6 +30,7 @@ import {
   isSymbolSupported,
   isDecimalsSupported,
   verifySignature,
+  makePresignHash,
 } from './../../../rosetta-helpers';
 import {
   createStacksPrivateKey,
@@ -48,16 +50,19 @@ import { getCoreNodeEndpoint, StacksCoreRpcClient } from '../../../core-rpc/clie
 import { has0xPrefix, FoundOrNot } from '../../../helpers';
 import * as crypto from 'crypto';
 import { RESTClient } from 'rpc-bitcoin';
-import { deserializeTransaction } from '@blockstack/stacks-transactions/lib/transaction';
-import { nextSignature } from '@blockstack/stacks-transactions/lib/authorization';
+import {
+  deserializeTransaction,
+  StacksTransaction,
+} from '@blockstack/stacks-transactions/lib/transaction';
+import { MessageSignature, nextSignature } from '@blockstack/stacks-transactions/lib/authorization';
 import { BufferReader } from '@blockstack/stacks-transactions/lib/bufferReader';
 import {
   createMessageSignature,
   createTransactionAuthField,
   isSingleSig,
-  makeSigHashPreSign,
 } from '@blockstack/stacks-transactions/lib/authorization';
 import * as BigNum from 'bn.js';
+import { Signature } from 'typescript';
 
 export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -274,171 +279,69 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       return;
     }
 
-    // const privKey = createStacksPrivateKey(
-    //   '7a1da04ca6fbf4adcb09acc15ff0f9b8bc158d7bd6698a2fa1a7e2c18906e02601'
-    // );
-    // const publicKey = '025c13b2fc2261956d8a4ad07d481b1a3b2cbf93a24f992249a61c3a1c4de79c51';
-    // const recipient = 'ST2VHM28V9E5QCRD6C73215KAPSBKQGPWTEE5CMQT';
-    // const amount = new BigNum(500000);
-    // const fee = new BigNum(180);
-    // const nonce = new BigNum(0);
-    // const memo = 'test transaction';
-
-    // const txpromise = makeUnsignedSTXTokenTransfer({
-    //   recipient,
-    //   amount,
-    //   fee,
-    //   nonce,
-    //   memo,
-    //   numSignatures: 1, // number of signature required
-    //   publicKey, // the participants public keys
-    //   network: GetStacksTestnetNetwork(),
-    // });
-
-    // const singedTxPromise = makeSTXTokenTransfer({
-    //   recipient,
-    //   amount,
-    //   fee,
-    //   nonce,
-    //   memo,
-    //   numSignatures: 1, // number of signature required,
-    //   senderKey: '7a1da04ca6fbf4adcb09acc15ff0f9b8bc158d7bd6698a2fa1a7e2c18906e02601',
-    // });
-
-    // const signedTx = await singedTxPromise;
-
-    // res.status(200).json({ signedTX: (await singedTxPromise).serialize().toString('hex') });
-
-    // const unsignedtx = await txpromise;
-
     const combineRequest: RosettaConstructionCombineRequest = req.body;
-    const unsigned_transaction_buffer = hexToBuffer('0x' + combineRequest.unsigned_transaction);
-    const signed_hex_bytes = combineRequest.signatures[0].signing_payload.hex_bytes;
+    const signatures = combineRequest.signatures;
 
-    // const signer = new TransactionSigner(unsignedtx);
-    // signer.signOrigin(privKey);
-
-    // const signed_hex = signer.transaction.serialize().toString('hex');
-
-    // const unsignedSerialized = unsignedtx.serialize().toString('hex');
-
-    // console.log('Signed transaction', JSON.stringify(unsignedtx), unsignedSerialized);
-
-    // const messageSignature = signWithKey(privKey, unsignedSerialized);
-
-    // if (!unsignedtx.auth.authType || !unsignedtx.auth.spendingCondition?.fee) return;
-    // console.log(
-    //   'signature',
-    //   JSON.stringify(
-    //     nextSignature(
-    //       unsignedtx.txid(),
-    //       unsignedtx.auth.authType,
-    //       unsignedtx.auth.spendingCondition?.fee,
-    //       unsignedtx.auth.spendingCondition?.nonce,
-    //       privKey
-    //     )
-    //   )
-    // );
-
-    // if (
-    //   signer.transaction.auth.spendingCondition &&
-    //   isSingleSig(signer.transaction.auth.spendingCondition)
-    // ) {
-    //   console.log(
-    //     'comparison',
-    //     signer.transaction.auth.spendingCondition.signature.data + ' ',
-    //     messageSignature.data
-    //   );
-    // }
-
-    // const unsignedBuffer = hexToBuffer('0x' + unsignedSerialized);
-
-    // if (verifySignature(unsignedSerialized, publicKey, messageSignature.data)) {
-    //   // res.status(200).json({ singnature_verification: 'verified' });
-    //   console.log('Signed Verified');
-    // } else {
-    //   // res.status(200).json({ singnature_verification: 'not verified' });
-    //   console.log('Signed not verified');
-    // }
-
-    // const obj = {
-    //   publicKey: publicKey,
-    //   unsigned: unsignedSerialized,
-    //   // signed: signed_hex,
-    //   signature: messageSignature.data,
-    // };
-
-    // // save it
-    // const jobj = JSON.stringify(obj, null, 2);
-    // // // fs.writeFileSync('/tmp/sig.json', jobj);
-
-    // console.log(`private key is ${privKey.data.toString('hex')}`);
-    // console.log(jobj);
-    // return;
-
-    //** public key verification */
-
-    // if (!transaction.auth.authType || !transaction.auth.spendingCondition?.nonce) {
-    //   return;
-    // }
-
-    // const preSignHash = makeSigHashPreSign(
-    //   transaction.txid(),
-    //   transaction.auth.authType,
-    //   transaction.auth.spendingCondition?.fee,
-    //   transaction.auth.spendingCondition?.nonce
-    // );
-
-    // const obj1 = {
-    //   publicKey: combineRequest.signatures[0].public_key.hex_bytes,
-    //   unsigned: combineRequest.unsigned_transaction,
-    //   // signed: signed_hex,
-    //   signature: combineRequest.signatures[0].hex_bytes,
-    // };
-
-    // // // save it
-    // const jobj1 = JSON.stringify(obj1, null, 2);
-    // // // fs.writeFileSync('/tmp/sig.json', jobj);
-
-    // console.log(`request params${privKey.data.toString('hex')}`);
-    // console.log(jobj1);
-
-    // if (
-    //   verifySignature(
-    //     combineRequest.unsigned_transaction,
-    //     combineRequest.signatures[0].public_key.hex_bytes,
-    //     combineRequest.signatures[0].hex_bytes
-    //   )
-    // ) {
-    //   res.status(200).json({ singnature_verification: 'verified' });
-    // } else {
-    //   res.status(200).json({ singnature_verification: 'not verified' });
-    // }
-
-    const transaction = deserializeTransaction(
-      BufferReader.fromBuffer(unsigned_transaction_buffer)
-    );
-
-    const signature = createMessageSignature(combineRequest.signatures[0].hex_bytes);
-
-    if (transaction.auth.spendingCondition && isSingleSig(transaction.auth.spendingCondition)) {
-      transaction.auth.spendingCondition.signature = signature;
-    } else {
-      const authField = createTransactionAuthField(signature);
-      transaction.auth.spendingCondition?.fields.push(authField);
+    if (has0xPrefix(combineRequest.unsigned_transaction)) {
+      res.status(400).json(RosettaErrors.invalidTransactionString);
+      return;
     }
-    const serializedTx = transaction.serialize().toString('hex');
-    // try {
-    //   const submitResult = await new StacksCoreRpcClient().sendTransaction(
-    //     hexToBuffer('0x' + serializedTx)
-    //   );
-    //   console.log('Transaction submited', JSON.stringify(submitResult));
-    //   res.status(200).json({ signed_transaction: submitResult });
-    // } catch (e) {
-    //   res.status(400).json(e.message);
-    // }
 
-    res.status(200).json({ signed_transaction: serializedTx });
+    if (signatures.length === 0) {
+      res.status(400).json(RosettaErrors.noSignatures);
+      return;
+    }
+
+    let unsigned_transaction_buffer: Buffer;
+    let transaction: StacksTransaction;
+
+    try {
+      unsigned_transaction_buffer = hexToBuffer('0x' + combineRequest.unsigned_transaction);
+      transaction = deserializeTransaction(BufferReader.fromBuffer(unsigned_transaction_buffer));
+    } catch (e) {
+      res.status(400).json(RosettaErrors.invalidTransactionString);
+      return;
+    }
+
+    for (const signature of signatures) {
+      if (signature.public_key.curve_type !== 'secp256k1') {
+        res.status(400).json(RosettaErrors.invalidCurveType);
+        return;
+      }
+      const preSignHash = makePresignHash(transaction);
+      if (!preSignHash) {
+        res.status(400).json(RosettaErrors.invalidTransactionString);
+        return;
+      }
+
+      let newSignature: MessageSignature;
+
+      try {
+        newSignature = createMessageSignature(signature.signing_payload.hex_bytes);
+      } catch (error) {
+        res.status(400).json(RosettaErrors.invalidSignature);
+        return;
+      }
+
+      if (!verifySignature(preSignHash, signature.public_key.hex_bytes, newSignature)) {
+        res.status(400).json(RosettaErrors.signatureNotVerified);
+      }
+
+      if (transaction.auth.spendingCondition && isSingleSig(transaction.auth.spendingCondition)) {
+        transaction.auth.spendingCondition.signature = newSignature;
+      } else {
+        const authField = createTransactionAuthField(newSignature);
+        transaction.auth.spendingCondition?.fields.push(authField);
+      }
+    }
+
+    const serializedTx = transaction.serialize().toString('hex');
+
+    const combineResponse: RosettaConstructionCombineResponse = {
+      signed_transaction: serializedTx,
+    };
+
+    res.status(200).json(combineResponse);
   });
 
   router.postAsync('/hash', async (req, res) => {
