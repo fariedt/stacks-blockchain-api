@@ -1187,13 +1187,17 @@ describe('Rosetta API', () => {
         network: RosettaConstants.network,
       },
       signed_transaction:
-        '80800000000400d429e0b599f9cba40ecc9f219df60f9d0a02212d000000000000000100000000000000000101cc0235071690bc762d0013f6d3e4be32aa8f8d01d0db9d845595589edba47e7425bd655f20398e3d931cbe60eea59bb66f44d3f28443078fe9d10082dccef80c010200000000040000000000000000000000000000000000000000000000000000000000000000',
+        '0x80800000000400d429e0b599f9cba40ecc9f219df60f9d0a02212d000000000000000100000000000000000101cc0235071690bc762d0013f6d3e4be32aa8f8d01d0db9d845595589edba47e7425bd655f20398e3d931cbe60eea59bb66f44d3f28443078fe9d10082dccef80c010200000000040000000000000000000000000000000000000000000000000000000000000000',
     };
 
     const result = await supertest(api.server).post(`/rosetta/v1/construction/hash`).send(request);
-    expect(result.status).toBe(400);
+    expect(result.status).toBe(200);
 
-    const expectedResponse = RosettaErrors.invalidTransactionString;
+    const expectedResponse: RosettaConstructionHashResponse = {
+      transaction_identifier: {
+        hash: '0x592fad4733f3e5c65e7dd9c82ad848191993a80cb3d891b6514bda6e3e7a239e',
+      },
+    };
 
     expect(JSON.parse(result.text)).toEqual(expectedResponse);
   });
@@ -1485,7 +1489,7 @@ describe('Rosetta API', () => {
     expect(result.type).toBe('application/json');
 
     const expectedResponse = {
-      unsigned_transaction: unsignedTransaction.toString('hex'),
+      unsigned_transaction: '0x' + unsignedTransaction.toString('hex'),
       payloads: [
         {
           address: sender,
@@ -1803,7 +1807,7 @@ describe('Rosetta API', () => {
         blockchain: 'stacks',
         network: 'testnet',
       },
-      unsigned_transaction: unsignedSerializedTx,
+      unsigned_transaction: '0x' + unsignedSerializedTx,
       signatures: [
         {
           signing_payload: {
@@ -1828,7 +1832,7 @@ describe('Rosetta API', () => {
     expect(result.type).toBe('application/json');
 
     const expectedResponse: RosettaConstructionCombineResponse = {
-      signed_transaction: signedSerializedTx,
+      signed_transaction: '0x' + signedSerializedTx,
     };
 
     expect(JSON.parse(result.text)).toEqual(expectedResponse);
