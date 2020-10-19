@@ -320,6 +320,11 @@ export function rawTxToBaseTx(raw_tx: string): BaseTx {
   const txId = '0x' + txidFromData(txBuffer);
   const bufferReader = BufferReader.fromBuffer(txBuffer);
   const transaction = readTransaction(bufferReader);
+  // transaction.auth.originCondition.signer = hexToBuffer(
+  //   '0x6aeb5bfcf2f13db687fbc42a6697405eef5c60c2953e4f2dcfc0afec8e04ca19'
+  // );
+  console.log('transaction', transaction);
+
   const txSender = getTxSenderAddress(transaction);
   const sponsorAddress = getTxSponsorAddress(transaction);
   const payload: any = transaction.payload;
@@ -358,7 +363,7 @@ export function rawTxToBaseTx(raw_tx: string): BaseTx {
     token_transfer_recipient_address: recipientAddr,
     tx_id: txId,
     type_id: transactionType,
-    status: DbTxStatus.Pending,
+    status: DbTxStatus.Empty,
     fee_rate: fee,
     sender_address: txSender,
     token_transfer_amount: amount,
@@ -436,6 +441,7 @@ export function verifySignature(
     const isVerified = publicKeyPair.verify(message, { r, s });
     return isVerified;
   } catch (error) {
+    console.log('verifySignature error = ', error);
     return false;
   }
 }

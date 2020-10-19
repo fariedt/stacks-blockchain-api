@@ -846,9 +846,11 @@ describe('Rosetta API', () => {
         fee: '-180',
         max_fee: '12380898',
       },
-      required_public_keys: {
-        address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
-      },
+      required_public_keys: [
+        {
+          address: 'STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6',
+        },
+      ],
     };
 
     expect(JSON.parse(result.text)).toEqual(expectResponse);
@@ -1384,6 +1386,7 @@ describe('Rosetta API', () => {
 
   test('payloads single sign success', async () => {
     const publicKey = publicKeyToString(pubKeyfromPrivKey(testnetKeys[0].secretKey));
+    console.log('My public key = ', publicKey);
     const sender = testnetKeys[0].stacksAddress;
     const recipient = testnetKeys[1].stacksAddress;
     const fee = '-180';

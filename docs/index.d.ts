@@ -467,7 +467,7 @@ export interface RosettaConstructionPreprocessRequest {
  */
 export interface RosettaConstructionPreprocessResponse {
   options?: RosettaOptions;
-  required_public_keys?: RosettaAccount;
+  required_public_keys?: RosettaAccount[];
 }
 
 /**
@@ -723,7 +723,7 @@ export interface ReadOnlyFunctionArgs {
  */
 export interface MempoolTokenTransferTransaction {
   tx_id: string;
-  tx_status: "pending";
+  tx_status: 'pending';
   tx_result?: {
     hex: string;
     repr: string;
@@ -747,7 +747,7 @@ export interface MempoolTokenTransferTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: "token_transfer";
+  tx_type: 'token_transfer';
   token_transfer: {
     recipient_address: string;
     /**
@@ -766,7 +766,7 @@ export interface MempoolTokenTransferTransaction {
  */
 export interface MempoolSmartContractTransaction {
   tx_id: string;
-  tx_status: "pending";
+  tx_status: 'pending';
   tx_result?: {
     hex: string;
     repr: string;
@@ -790,7 +790,7 @@ export interface MempoolSmartContractTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: "smart_contract";
+  tx_type: 'smart_contract';
   smart_contract: {
     contract_id: string;
     /**
@@ -806,7 +806,7 @@ export interface MempoolSmartContractTransaction {
  */
 export interface MempoolContractCallTransaction {
   tx_id: string;
-  tx_status: "pending";
+  tx_status: 'pending';
   tx_result?: {
     hex: string;
     repr: string;
@@ -830,7 +830,7 @@ export interface MempoolContractCallTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: "contract_call";
+  tx_type: 'contract_call';
   contract_call: {
     contract_id: string;
     /**
@@ -846,7 +846,7 @@ export interface MempoolContractCallTransaction {
  */
 export interface MempoolPoisonMicroblockTransaction {
   tx_id: string;
-  tx_status: "pending";
+  tx_status: 'pending';
   tx_result?: {
     hex: string;
     repr: string;
@@ -870,7 +870,7 @@ export interface MempoolPoisonMicroblockTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: "poison_microblock";
+  tx_type: 'poison_microblock';
   poison_microblock: {
     /**
      * Hex encoded microblock header
@@ -888,7 +888,7 @@ export interface MempoolPoisonMicroblockTransaction {
  */
 export interface MempoolCoinbaseTransaction {
   tx_id: string;
-  tx_status: "pending";
+  tx_status: 'pending';
   tx_result?: {
     hex: string;
     repr: string;
@@ -912,7 +912,7 @@ export interface MempoolCoinbaseTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: "coinbase";
+  tx_type: 'coinbase';
   coinbase_payload: {
     /**
      * Hex encoded 32-byte scratch space for block leader's use
@@ -935,13 +935,13 @@ export interface PostConditionStx {
   principal: PostConditionPrincipal;
   condition_code: PostConditionFungibleConditionCode;
   amount: string;
-  type: "stx";
+  type: 'stx';
 }
 
 export interface PostConditionFungible {
   principal: PostConditionPrincipal;
   condition_code: PostConditionFungibleConditionCode;
-  type: "fungible";
+  type: 'fungible';
   amount: string;
   asset: {
     asset_name: string;
@@ -953,7 +953,7 @@ export interface PostConditionFungible {
 export interface PostConditionNonFungible {
   principal: PostConditionPrincipal;
   condition_code: PostConditionNonFungibleConditionCode;
-  type: "non_fungible";
+  type: 'non_fungible';
   asset_value: {
     hex: string;
     repr: string;
@@ -969,45 +969,48 @@ export interface PostConditionNonFungible {
  * A fungible condition code encodes a statement being made for either STX or a fungible token, with respect to the originating account.
  */
 export type PostConditionFungibleConditionCode =
-  | "sent_equal_to"
-  | "sent_greater_than"
-  | "sent_greater_than_or_equal_to"
-  | "sent_less_than"
-  | "sent_less_than_or_equal_to";
+  | 'sent_equal_to'
+  | 'sent_greater_than'
+  | 'sent_greater_than_or_equal_to'
+  | 'sent_less_than'
+  | 'sent_less_than_or_equal_to';
 
-export type PostConditionMode = "allow" | "deny";
+export type PostConditionMode = 'allow' | 'deny';
 
 /**
  * A non-fungible condition code encodes a statement being made about a non-fungible token, with respect to whether or not the particular non-fungible token is owned by the account.
  */
-export type PostConditionNonFungibleConditionCode = "sent" | "not_sent";
+export type PostConditionNonFungibleConditionCode = 'sent' | 'not_sent';
 
-export type PostConditionPrincipalType = "principal_origin" | "principal_standard" | "principal_contract";
+export type PostConditionPrincipalType =
+  | 'principal_origin'
+  | 'principal_standard'
+  | 'principal_contract';
 
 export type PostConditionPrincipal =
   | {
       /**
        * String literal of type `PostConditionPrincipalType`
        */
-      type_id: "principal_origin";
+      type_id: 'principal_origin';
     }
   | {
       /**
        * String literal of type `PostConditionPrincipalType`
        */
-      type_id: "principal_standard";
+      type_id: 'principal_standard';
       address: string;
     }
   | {
       /**
        * String literal of type `PostConditionPrincipalType`
        */
-      type_id: "principal_contract";
+      type_id: 'principal_contract';
       address: string;
       contract_name: string;
     };
 
-export type PostConditionType = "stx" | "non_fungible" | "fungible";
+export type PostConditionType = 'stx' | 'non_fungible' | 'fungible';
 
 /**
  * Post-conditionscan limit the damage done to a user's assets
@@ -1151,7 +1154,7 @@ export interface RosettaCoinChange {
   /**
    * CoinActions are different state changes that a Coin can undergo. When a Coin is created, it is coin_created. When a Coin is spent, it is coin_spent. It is assumed that a single Coin cannot be created or spent more than once.
    */
-  coin_action: "coin_created" | "coin_spent";
+  coin_action: 'coin_created' | 'coin_spent';
 }
 
 /**
@@ -1440,7 +1443,9 @@ export interface RosettaParentBlockIdentifier {
 /**
  * When fetching data by BlockIdentifier, it may be possible to only specify the index or hash. If neither property is specified, it is assumed that the client is making a request at the current block.
  */
-export type RosettaPartialBlockIdentifier = RosettaBlockIdentifierHash | RosettaBlockIdentifierHeight;
+export type RosettaPartialBlockIdentifier =
+  | RosettaBlockIdentifierHash
+  | RosettaBlockIdentifierHeight;
 
 /**
  * PublicKey contains a public key byte array for a particular CurveType encoded in hex. Note that there is no PrivateKey struct as this is NEVER the concern of an implementation.
@@ -1453,7 +1458,7 @@ export interface RosettaPublicKey {
   /**
    * CurveType is the type of cryptographic curve associated with a PublicKey.
    */
-  curve_type: "secp256k1" | "edwards25519";
+  curve_type: 'secp256k1' | 'edwards25519';
 }
 
 /**
@@ -1476,7 +1481,7 @@ export interface RosettaSignature {
   /**
    * SignatureType is the type of a cryptographic signature.
    */
-  signature_type: "ecdsa" | "ecdsa_recovery" | "ed25519" | "schnorr_1" | "schnorr_poseidon";
+  signature_type: 'ecdsa' | 'ecdsa_recovery' | 'ed25519' | 'schnorr_1' | 'schnorr_poseidon';
   hex_bytes: string;
 }
 
@@ -1493,7 +1498,7 @@ export interface SigningPayload {
   /**
    * SignatureType is the type of a cryptographic signature.
    */
-  signature_type?: "ecdsa" | "ecdsa_recovery" | "ed25519" | "schnorr_1" | "schnorr_poseidon";
+  signature_type?: 'ecdsa' | 'ecdsa_recovery' | 'ed25519' | 'schnorr_1' | 'schnorr_poseidon';
 }
 
 /**
@@ -1565,7 +1570,7 @@ export interface RosettaTransaction {
   };
 }
 
-export type TransactionEventAssetType = "transfer" | "mint" | "burn";
+export type TransactionEventAssetType = 'transfer' | 'mint' | 'burn';
 
 export interface TransactionEventAsset {
   asset_event_type?: TransactionEventAssetType;
@@ -1578,7 +1583,7 @@ export interface TransactionEventAsset {
 
 export interface TransactionEventFungibleAsset {
   event_index: number;
-  event_type: "fungible_token_asset";
+  event_type: 'fungible_token_asset';
   asset: {
     asset_event_type: string;
     asset_id: string;
@@ -1590,7 +1595,7 @@ export interface TransactionEventFungibleAsset {
 
 export interface TransactionEventNonFungibleAsset {
   event_index: number;
-  event_type: "non_fungible_token_asset";
+  event_type: 'non_fungible_token_asset';
   asset: {
     asset_event_type: string;
     asset_id: string;
@@ -1608,7 +1613,7 @@ export interface TransactionEventNonFungibleAsset {
  */
 export interface TransactionEventSmartContractLog {
   event_index: number;
-  event_type: "smart_contract_log";
+  event_type: 'smart_contract_log';
   contract_log: {
     contract_id: string;
     topic: string;
@@ -1624,7 +1629,7 @@ export interface TransactionEventSmartContractLog {
  */
 export interface TransactionEventStxAsset {
   event_index: number;
-  event_type: "stx_asset";
+  event_type: 'stx_asset';
   asset: TransactionEventAsset;
 }
 
@@ -1632,10 +1637,10 @@ export interface TransactionEventStxAsset {
  * Events types
  */
 export type TransactionEventType =
-  | "smart_contract_log"
-  | "stx_asset"
-  | "fungible_token_asset"
-  | "non_fungible_token_asset";
+  | 'smart_contract_log'
+  | 'stx_asset'
+  | 'fungible_token_asset'
+  | 'non_fungible_token_asset';
 
 export type TransactionEvent =
   | TransactionEventSmartContractLog
@@ -1703,7 +1708,7 @@ export interface TokenTransferTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: "token_transfer";
+  tx_type: 'token_transfer';
   /**
    * List of transaction events
    */
@@ -1781,7 +1786,7 @@ export interface SmartContractTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: "smart_contract";
+  tx_type: 'smart_contract';
   /**
    * List of transaction events
    */
@@ -1859,7 +1864,7 @@ export interface ContractCallTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: "contract_call";
+  tx_type: 'contract_call';
   /**
    * List of transaction events
    */
@@ -1950,7 +1955,7 @@ export interface PoisonMicroblockTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: "poison_microblock";
+  tx_type: 'poison_microblock';
   poison_microblock: {
     /**
      * Hex encoded microblock header
@@ -2023,7 +2028,7 @@ export interface CoinbaseTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: "coinbase";
+  tx_type: 'coinbase';
   coinbase_payload: {
     /**
      * Hex encoded 32-byte scratch space for block leader's use
@@ -2035,12 +2040,22 @@ export interface CoinbaseTransaction {
 /**
  * Status of the transaction
  */
-export type TransactionStatus = "success" | "pending" | "abort_by_response" | "abort_by_post_condition";
+export type TransactionStatus =
+  | 'success'
+  | 'pending'
+  | 'abort_by_response'
+  | 'abort_by_post_condition'
+  | '';
 
 /**
  * String literal of all Stacks 2.0 transaction types
  */
-export type TransactionType = "token_transfer" | "smart_contract" | "contract_call" | "poison_microblock" | "coinbase";
+export type TransactionType =
+  | 'token_transfer'
+  | 'smart_contract'
+  | 'contract_call'
+  | 'poison_microblock'
+  | 'coinbase';
 
 /**
  * Describes all transaction types on Stacks 2.0 blockchain
@@ -2058,20 +2073,20 @@ export interface RpcAddressBalanceNotificationParams {
 }
 
 export interface RpcAddressBalanceNotificationResponse {
-  jsonrpc: "2.0";
-  method: "address_balance_update";
+  jsonrpc: '2.0';
+  method: 'address_balance_update';
   params: RpcAddressBalanceNotificationParams;
 }
 
 export interface RpcAddressBalanceSubscriptionParams {
-  event: "address_balance_update";
+  event: 'address_balance_update';
   address: string;
 }
 
 export interface RpcAddressBalanceSubscriptionRequest {
-  jsonrpc: "2.0";
+  jsonrpc: '2.0';
   id: number | string;
-  method: "address_balance_update";
+  method: 'address_balance_update';
   params: RpcAddressBalanceSubscriptionParams;
 }
 
@@ -2083,24 +2098,24 @@ export interface RpcAddressTxNotificationParams {
 }
 
 export interface RpcAddressTxNotificationResponse {
-  jsonrpc: "2.0";
-  method: "address_tx_update";
+  jsonrpc: '2.0';
+  method: 'address_tx_update';
   params: RpcAddressTxNotificationParams;
 }
 
 export interface RpcAddressTxSubscriptionParams {
-  event: "address_tx_update";
+  event: 'address_tx_update';
   address: string;
 }
 
 export interface RpcAddressTxSubscriptionRequest {
-  jsonrpc: "2.0";
+  jsonrpc: '2.0';
   id: number | string;
-  method: "address_tx_update";
+  method: 'address_tx_update';
   params: RpcAddressTxSubscriptionParams;
 }
 
-export type RpcSubscriptionType = "tx_update" | "address_tx_update" | "address_balance_update";
+export type RpcSubscriptionType = 'tx_update' | 'address_tx_update' | 'address_balance_update';
 
 export interface RpcTxUpdateNotificationParams {
   tx_id: string;
@@ -2109,20 +2124,19 @@ export interface RpcTxUpdateNotificationParams {
 }
 
 export interface RpcTxUpdateNotificationResponse {
-  jsonrpc: "2.0";
-  method: "tx_update";
+  jsonrpc: '2.0';
+  method: 'tx_update';
   params: RpcTxUpdateNotificationParams;
 }
 
 export interface RpcTxUpdateSubscriptionParams {
-  event: "tx_update";
+  event: 'tx_update';
   tx_id: string;
 }
 
 export interface RpcTxUpdateSubscriptionRequest {
-  jsonrpc: "2.0";
+  jsonrpc: '2.0';
   id: number | string;
-  method: "tx_update";
+  method: 'tx_update';
   params: RpcTxUpdateSubscriptionParams;
 }
-

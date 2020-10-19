@@ -165,11 +165,13 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
     const rosettaPreprocessResponse: RosettaConstructionPreprocessResponse = {
       options,
-      required_public_keys: {
-        address: options.sender_address as string,
-      },
+      required_public_keys: [
+        {
+          address: options.sender_address as string,
+        },
+      ],
     };
-
+    console.log('preprocess response = ', rosettaPreprocessResponse);
     res.json(rosettaPreprocessResponse);
   });
 
@@ -180,6 +182,8 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(makeRosettaError(valid));
       return;
     }
+
+    console.log('metadata request = ', req.body);
 
     const request: RosettaConstructionMetadataRequest = req.body;
     const options: RosettaOptions = req.body.options;
@@ -317,6 +321,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(makeRosettaError(valid));
       return;
     }
+    console.log('parse request = ', req.body);
     let inputTx = req.body.transaction;
     const signed = req.body.signed;
 
@@ -331,16 +336,19 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       return;
     }
     const operations = getOperations(rawTxToBaseTx(inputTx));
+    let response;
     if (signed) {
-      res.json({
+      response = {
         operations: operations,
         account_identifier_signers: getSigners(transaction),
-      });
+      };
     } else {
-      res.json({
+      response = {
         operations: operations,
-      });
+      };
     }
+    console.log('parse respnse = ', response);
+    res.json(response);
   });
 
   //construction/submit endpoint
@@ -383,6 +391,8 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(makeRosettaError(valid));
       return;
     }
+
+    console.log('Payload request = ', req.body);
 
     const options = getOptionsFromOperations(req.body.operations);
     if (options == null) {
@@ -445,18 +455,24 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     }
 
     const transaction = await makeUnsignedSTXTokenTransfer(tokenTransferOptions);
+    console.log('payload transaction = ', transaction);
+    console.log('spending condition = ', transaction.auth.spendingCondition);
     const unsignedTransaction = transaction.serialize();
-    const hexBytes = digestSha512_256(unsignedTransaction).toString('hex');
+    // // bufferReader.readBuffer(constants_1.RECOVERABLE_ECDSA_SIG_LENGTH_BYTES).toString('hex')
+    const hexBytes = BufferReader.fromBuffer(unsignedTransaction).readBuffer(65).toString('hex');
+    // const hexBytes = digestSha512_256(unsignedTransaction).toString('hex');
+    console.log('transaction id = ', transaction.txid());
     const response: RosettaConstructionPayloadResponse = {
       unsigned_transaction: '0x' + unsignedTransaction.toString('hex'),
       payloads: [
         {
           address: senderAddress,
-          hex_bytes: '0x' + hexBytes,
-          signature_type: 'ecdsa',
+          hex_bytes: transaction.txid(),
+          signature_type: 'ecdsa_recovery',
         },
       ],
     };
+    console.log('Payload response = ', response);
     res.json(response);
   });
 
@@ -467,7 +483,8 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       res.status(400).json(makeRosettaError(valid));
       return;
     }
-
+    console.log('combine req = ', req.body);
+    console.log('signing_payload = ', req.body.signatures[0].signing_payload);
     const combineRequest: RosettaConstructionCombineRequest = req.body;
     const signatures = combineRequest.signatures;
 
@@ -505,16 +522,26 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
     let newSignature: MessageSignature;
 
-    if (has0xPrefix(signatures[0].signing_payload.hex_bytes)) {
-      signatures[0].signing_payload.hex_bytes = signatures[0].signing_payload.hex_bytes.replace(
-        '0x',
-        ''
-      );
-    }
+    // if (has0xPrefix(signatures[0].signing_payload.hex_bytes)) {
+    //   signatures[0].signing_payload.hex_bytes = signatures[0].signing_payload.hex_bytes.replace(
+    //     '0x',
+    //     ''
+    //   );
+    // }
 
     try {
-      newSignature = createMessageSignature(signatures[0].signing_payload.hex_bytes);
+      const temp = BufferReader.fromBuffer(Buffer.from(signatures[0].hex_bytes, 'hex'))
+        .readBuffer(65)
+        .toString('hex');
+      const length = Buffer.from(temp, 'hex').byteLength;
+      console.log('length = ', length);
+      newSignature = createMessageSignature(signatures[0].hex_bytes);
+      // newSignature = {
+      //   type: 9,
+      //   data: signatures[0].hex_bytes,
+      // };
     } catch (error) {
+      console.log(error);
       res.status(400).json(RosettaErrors.invalidSignature);
       return;
     }
@@ -526,7 +553,13 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
       );
     }
 
-    if (!verifySignature(preSignHash, signatures[0].public_key.hex_bytes, newSignature)) {
+    if (
+      !verifySignature(
+        signatures[0].signing_payload.hex_bytes,
+        signatures[0].public_key.hex_bytes,
+        newSignature
+      )
+    ) {
       res.status(400).json(RosettaErrors.signatureNotVerified);
     }
 
