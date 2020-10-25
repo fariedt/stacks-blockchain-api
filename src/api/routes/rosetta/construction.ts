@@ -23,6 +23,7 @@ import {
   createTransactionAuthField,
   emptyMessageSignature,
   isSingleSig,
+  makeSigHashPreSign,
   MessageSignature,
 } from '@blockstack/stacks-transactions/lib/authorization';
 import { BufferReader } from '@blockstack/stacks-transactions/lib/bufferReader';
@@ -35,6 +36,8 @@ import {
   makeUnsignedSTXTokenTransfer,
   TokenTransferOptions,
   UnsignedMultiSigTokenTransferOptions,
+  TransactionSigner,
+  AuthType,
 } from '@blockstack/stacks-transactions';
 import * as express from 'express';
 import { StacksCoreRpcClient } from '../../../core-rpc/client';
@@ -462,12 +465,25 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
     const hexBytes = BufferReader.fromBuffer(unsignedTransaction).readBuffer(65).toString('hex');
     // const hexBytes = digestSha512_256(unsignedTransaction).toString('hex');
     console.log('transaction id = ', transaction.txid());
+
+    const signer = new TransactionSigner(transaction);
+    console.log(`before signing, sighash is ${signer.sigHash}`);
+
+    const prehash = makeSigHashPreSign(
+      signer.sigHash,
+      AuthType.Standard,
+      new BN(fees),
+      accountInfo.nonce ? new BN(accountInfo.nonce) : new BN(0)
+    );
+    console.log(`prehash: ${prehash}`);
+
+    console.log('');
     const response: RosettaConstructionPayloadResponse = {
       unsigned_transaction: '0x' + unsignedTransaction.toString('hex'),
       payloads: [
         {
           address: senderAddress,
-          hex_bytes: transaction.txid(),
+          hex_bytes: prehash,
           signature_type: 'ecdsa_recovery',
         },
       ],
@@ -535,7 +551,8 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
         .toString('hex');
       const length = Buffer.from(temp, 'hex').byteLength;
       console.log('length = ', length);
-      newSignature = createMessageSignature(signatures[0].hex_bytes);
+      const rotated = signatures[0].hex_bytes.slice(128) + signatures[0].hex_bytes.slice(0, -2);
+      newSignature = createMessageSignature(rotated);
       // newSignature = {
       //   type: 9,
       //   data: signatures[0].hex_bytes,
@@ -565,6 +582,7 @@ export function createRosettaConstructionRouter(db: DataStore): RouterWithAsync 
 
     if (transaction.auth.spendingCondition && isSingleSig(transaction.auth.spendingCondition)) {
       transaction.auth.spendingCondition.signature = newSignature;
+      console.log(`---- new signature set: ${JSON.stringify(newSignature, null, 2)}`);
     } else {
       //support multi-sig
     }
