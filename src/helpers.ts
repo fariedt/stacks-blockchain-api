@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as winston from 'winston';
 import * as c32check from 'c32check';
 import * as btc from 'bitcoinjs-lib';
+import { DbBNSName, DbBNSNamespace } from './datastore/common';
 
 export const isDevEnv = process.env.NODE_ENV === 'development';
 export const isTestEnv = process.env.NODE_ENV === 'test';
@@ -514,4 +515,14 @@ export function normalizeHashString(input: string): string | false {
     return false;
   }
   return `0x${hashBuffer.toString('hex')}`;
+}
+
+// TODO FIXME
+export function computeNamePrice(name: DbBNSName): number {
+  return 100;
+}
+
+// TODO FIXME
+export function computeNamespacePrice(name: DbBNSNamespace): number {
+  return 10000;
 }
