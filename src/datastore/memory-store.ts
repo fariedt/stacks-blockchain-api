@@ -18,6 +18,9 @@ import {
   DbStxBalance,
   DbStxLockEvent,
   DbBurnchainReward,
+  DbBNSName,
+  DbBNSZoneFile,
+  DbBNSNamespace,
 } from './common';
 import { logger, FoundOrNot } from '../helpers';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
@@ -416,5 +419,36 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
       .sort((a, b) => b.occurred_at - a.occurred_at)
       .slice(0, 5);
     return Promise.resolve({ results: request });
+  }
+
+  getNamespaceList(): Promise<{ results: string[] }> {
+    throw new Error('Method not implemented.');
+  }
+  getNamespaceNamesList(args: { namespace: string; page: number }): Promise<{ results: string[] }> {
+    throw new Error('Method not implemented.');
+  }
+  getNamesList(args: { page: number }): Promise<{ results: string[] }> {
+    throw new Error('Method not implemented.');
+  }
+  getSubdomainsList(args: { page: number }): Promise<{ results: string[] }> {
+    throw new Error('Method not implemented.');
+  }
+  getNamespace(args: { namespace: string }): Promise<FoundOrNot<DbBNSNamespace>> {
+    throw new Error('Method not implemented.');
+  }
+  getName(args: { name: string }): Promise<FoundOrNot<DbBNSName>> {
+    throw new Error('Method not implemented.');
+  }
+  getHistoricalZoneFile(args: {
+    name: string;
+    zoneFileHash: string;
+  }): Promise<FoundOrNot<DbBNSZoneFile>> {
+    throw new Error('Method not implemented.');
+  }
+  getNamesByAddressList(args: {
+    blockchain: string;
+    address: string;
+  }): Promise<{ results: string[] }> {
+    throw new Error('Method not implemented.');
   }
 }

@@ -284,6 +284,33 @@ export interface DbStxBalance {
   burnchainUnlockHeight: number;
 }
 
+export interface DbBNSNamespace {
+  namespace: string;
+  address: string;
+  reveal_block: number;
+  ready_block: number;
+  buckets: string;
+  base: number;
+  coeff: number;
+  nonalpha_discount: number;
+  no_vowel_discount: number;
+  lifenumber: number;
+}
+
+export interface DbBNSName {
+  address: string;
+  blockchain: string;
+  expire_block: number;
+  grace_period: number;
+  renewal_deadline: number;
+  resolver: string | undefined;
+  status: string;
+  zonefile: string;
+  zonefile_hash: string;
+}
+export interface DbBNSZoneFile {
+  zonefile: string;
+}
 export interface DataStore extends DataStoreEventEmitter {
   getBlock(blockHash: string): Promise<FoundOrNot<DbBlock>>;
   getBlockByHeight(block_height: number): Promise<FoundOrNot<DbBlock>>;
@@ -364,6 +391,40 @@ export interface DataStore extends DataStoreEventEmitter {
   searchPrincipal(args: { principal: string }): Promise<FoundOrNot<DbSearchResult>>;
 
   insertFaucetRequest(faucetRequest: DbFaucetRequest): Promise<void>;
+
+  getNamespaceList(): Promise<{
+    results: string[];
+  }>;
+
+  getNamespaceNamesList(args: {
+    namespace: string;
+    page: number;
+  }): Promise<{
+    results: string[];
+  }>;
+
+  getNamesList(args: {
+    page: number;
+  }): Promise<{
+    results: string[];
+  }>;
+
+  getSubdomainsList(args: {
+    page: number;
+  }): Promise<{
+    results: string[];
+  }>;
+
+  getNamespace(args: { namespace: string }): Promise<FoundOrNot<DbBNSNamespace>>;
+  getName(args: { name: string }): Promise<FoundOrNot<DbBNSName>>;
+  getHistoricalZoneFile(args: {
+    name: string;
+    zoneFileHash: string;
+  }): Promise<FoundOrNot<DbBNSZoneFile>>;
+  getNamesByAddressList(args: {
+    blockchain: string;
+    address: string;
+  }): Promise<{ results: string[] }>;
 }
 
 export function getAssetEventId(event_index: number, event_tx_id: string): string {

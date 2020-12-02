@@ -42,6 +42,8 @@ import {
   DbFtBalance,
   DbMinerReward,
   DbBurnchainReward,
+  DbBNSName,
+  DbBNSZoneFile,
 } from './common';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
 import { getTxTypeId } from '../api/controllers/db-controller';
@@ -299,7 +301,6 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     super();
     this.pool = pool;
   }
-
   async getChainTipHeight(
     client: ClientBase
   ): Promise<{ blockHeight: number; blockHash: string; indexBlockHash: string }> {
@@ -2555,6 +2556,117 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     );
     const results = queryResult.rows.map(r => this.parseFaucetRequestQueryResult(r));
     return { results };
+  }
+
+  async getNamespaceList() {
+    const queryResult = await this.pool.query(
+      `
+      SELECT namespace_id
+      FROM namespaces
+      ORDER BY namespace_id
+      `
+    );
+
+    const results = queryResult.rows;
+    return { results };
+  }
+  async getNamespaceNamesList(args: { namespace: string; page: number }) {
+    const offset = args.page * 100;
+    const queryResult = await this.pool.query(
+      `
+      SELECT name
+      FROM names
+      WHERE namespace = $1
+      ORDER BY name
+      LIMIT 100
+      OFFSET $2
+      `,
+      [args.namespace, offset]
+    );
+
+    const results = queryResult.rows;
+    return { results };
+  }
+  async getNamesList(args: { page: number }) {
+    const offset = args.page * 100;
+    const queryResult = await this.pool.query(
+      `
+      SELECT name
+      FROM names
+      ORDER BY name
+      LIMIT 100
+      OFFSET $1
+      `,
+      [offset]
+    );
+
+    const results = queryResult.rows;
+    return { results };
+  }
+  async getSubdomainsList(args: { page: number }) {
+    const offset = args.page * 100;
+    const queryResult = await this.pool.query(
+      `
+      SELECT fully_qualified_subdomain
+      FROM subdomains
+      ORDER BY fully_qualified_subdomain
+      LIMIT 100
+      OFFSET $1
+      `,
+      [offset]
+    );
+
+    const results = queryResult.rows;
+    return { results };
+  }
+
+  async getNamespace(args: { namespace: string }) {
+    const queryResult = await this.pool.query(
+      `
+      SELECT *
+      FROM namespaces
+      WHERE namespace = $1
+      `,
+      [args.namespace]
+    );
+    if (queryResult.rowCount > 0) {
+      return {
+        found: true,
+        result: queryResult.rows[0],
+      };
+    }
+    return { found: false } as const;
+  }
+
+  async getName(args: { name: string }) {
+    const queryResult = await this.pool.query(
+      `
+      SELECT *
+      FROM names
+      WHERE name = $1
+      `,
+      [args.name]
+    );
+    if (queryResult.rowCount > 0) {
+      return {
+        found: true,
+        result: queryResult.rows[0],
+      };
+    }
+    return { found: false } as const;
+  }
+
+  getHistoricalZoneFile(args: {
+    name: string;
+    zoneFileHash: string;
+  }): Promise<FoundOrNot<DbBNSZoneFile>> {
+    throw new Error('Method not implemented.');
+  }
+  getNamesByAddressList(args: {
+    blockchain: string;
+    address: string;
+  }): Promise<{ results: string[] }> {
+    throw new Error('Method not implemented.');
   }
 
   async close(): Promise<void> {
