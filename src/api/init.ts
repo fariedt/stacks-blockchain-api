@@ -22,6 +22,13 @@ import { createRosettaMempoolRouter } from './routes/rosetta/mempool';
 import { createRosettaBlockRouter } from './routes/rosetta/block';
 import { createRosettaAccountRouter } from './routes/rosetta/account';
 import { createRosettaConstructionRouter } from './routes/rosetta/construction';
+import {
+  createBNSNamespacesRouter,
+  createBNSNamesRouter,
+  createBNSSubdomainsRouterRouter,
+  createBNSAddressesRouter,
+  createBNSPriceRouter,
+} from './routes/bns/index';
 import { logger } from '../helpers';
 import { createWsRpcRouter } from './routes/ws-rpc';
 import { createBurnchainRouter } from './routes/burnchain';
@@ -74,6 +81,21 @@ export async function startApiServer(
     res.redirect(`/extended/v1/status`);
   });
 
+  // Setup legacy API v1 and v2 routes
+  app.use(
+    '/v1',
+    (() => {
+      const router = addAsync(express.Router());
+      router.use(cors());
+
+      router.use('/names', createBNSNamesRouter(datastore));
+      router.use('/namespaces', createBNSNamespacesRouter(datastore));
+      router.use('/subdomains', createBNSSubdomainsRouterRouter(datastore));
+      router.use('/addresses', createBNSAddressesRouter(datastore));
+      return router;
+    })()
+  );
+
   // Setup extended API v1 routes
   app.use(
     '/extended/v1',
@@ -95,7 +117,17 @@ export async function startApiServer(
   );
 
   // Setup direct proxy to core-node RPC endpoints (/v2)
-  app.use('/v2', createCoreNodeRpcProxyRouter());
+  app.use(
+    '/v2',
+    (() => {
+      const router = addAsync(express.Router());
+      router.use(cors());
+      router.use('/prices', createBNSPriceRouter(datastore));
+      router.use('/', createCoreNodeRpcProxyRouter());
+
+      return router;
+    })()
+  );
 
   // Rosetta API -- https://www.rosetta-api.org
   app.use(
