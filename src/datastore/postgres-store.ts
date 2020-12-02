@@ -2567,7 +2567,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       `
     );
 
-    const results = queryResult.rows;
+    const results = queryResult.rows.map(r => r.namespace_id);
     return { results };
   }
   async getNamespaceNamesList(args: { namespace: string; page: number }) {
@@ -2576,7 +2576,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       `
       SELECT name
       FROM names
-      WHERE namespace = $1
+      WHERE namespace_id = $1
       ORDER BY name
       LIMIT 100
       OFFSET $2
@@ -2584,7 +2584,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       [args.namespace, offset]
     );
 
-    const results = queryResult.rows;
+    const results = queryResult.rows.map(r => r.name);
     return { results };
   }
   async getNamesList(args: { page: number }) {
@@ -2600,7 +2600,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       [offset]
     );
 
-    const results = queryResult.rows;
+    const results = queryResult.rows.map(r => r.name);
     return { results };
   }
   async getSubdomainsList(args: { page: number }) {
@@ -2616,7 +2616,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       [offset]
     );
 
-    const results = queryResult.rows;
+    const results = queryResult.rows.map(r => r.fully_qualified_subdomain);
     return { results };
   }
 
@@ -2625,7 +2625,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       `
       SELECT *
       FROM namespaces
-      WHERE namespace = $1
+      WHERE namespace_id = $1
       `,
       [args.namespace]
     );

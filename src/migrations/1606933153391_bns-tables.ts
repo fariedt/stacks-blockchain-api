@@ -5,7 +5,7 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createTable('namespaces', {
-    namespace: {
+    namespace_id: {
       type: 'string',
       primaryKey: true,
     },
@@ -66,9 +66,9 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     zonefile_hash: {
       type: 'string',
-      notNull: true,
+      notNull: false,
     },
-    namespace: {
+    namespace_id: {
       type: 'string',
       notNull: true,
       references: 'namespaces',
@@ -76,10 +76,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   });
 
   pgm.createTable('subdomains', {
-    id: {
-      type: 'serial',
-      primaryKey: true,
-    },
     zonefile_hash: {
       type: 'string',
       notNull: true,
@@ -90,7 +86,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     fully_qualified_subdomain: {
       type: 'string',
-      notNull: true,
+      primaryKey: true,
     },
     owner: {
       type: 'string',
@@ -109,20 +105,20 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       notNull: true,
     },
     resolver: 'string',
-    namespace: {
+    namespace_id: {
       type: 'string',
-      notNull: true,
+       notNull: true,
       references: 'namespaces',
     },
     name: {
       type: 'string',
       notNull: true,
-      references: 'names',
+      // references: 'names'
     }
   });
 
-  pgm.createIndex('names', 'namespace');
-  pgm.createIndex('subdomains', 'namespace');
+  pgm.createIndex('names', 'namespace_id');
+  pgm.createIndex('subdomains', 'namespace_id');
   pgm.createIndex('subdomains', 'name');
 }
 
