@@ -5,9 +5,13 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createTable('namespaces', {
+    id: {
+      type: 'serial',
+      primaryKey: true
+    },
     namespace_id: {
       type: 'string',
-      primaryKey: true,
+      notNull: true,
     },
     address: {
       type: 'string',
@@ -45,12 +49,21 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       type: 'integer',
       notNull: true,
     },
+    latest: {
+      type: 'boolean',
+      notNull: true,
+      default: false
+    }
   });
 
   pgm.createTable('names', {
+    id: {
+      type: 'serial',
+      primaryKey: true
+    },
     name: {
       type: 'string',
-      primaryKey: true,
+      notNull: true,
     },
     address: {
       type: 'string',
@@ -68,14 +81,29 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       type: 'string',
       notNull: false,
     },
+    zonefile: {
+      type: 'bytea',
+      notNull: true
+    },
     namespace_id: {
-      type: 'string',
+      type: 'serial',
+      referencesConstraintName: 'id',
       notNull: true,
       references: 'namespaces',
-    }
+    },
+    latest: {
+      type: 'boolean',
+      notNull: true,
+      default: false
+    },
+  
   });
 
   pgm.createTable('subdomains', {
+    id: {
+      type: 'serial',
+      primaryKey: true
+    },
     zonefile_hash: {
       type: 'string',
       notNull: true,
@@ -106,8 +134,9 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     resolver: 'string',
     namespace_id: {
-      type: 'string',
-       notNull: true,
+      referencesConstraintName:'id',
+      type: 'serial',
+      notNull: true,
       references: 'namespaces',
     },
     name: {
@@ -123,7 +152,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-  pgm.dropTable('namespaces');
-  pgm.dropTable('names');
   pgm.dropTable('subdomains');
+  pgm.dropTable('names');
+  pgm.dropTable('namespaces');
 }
