@@ -5,13 +5,17 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createTable('namespaces', {
-    id: {
-      type: 'serial',
-      primaryKey: true
-    },
+    // id: {
+    //   type: 'serial',
+    //   primaryKey: true,
+    // },
     namespace_id: {
       type: 'string',
       notNull: true,
+    },
+    launched_at: {
+      type: 'integer',
+      notNull: true
     },
     address: {
       type: 'string',
@@ -49,6 +53,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       type: 'integer',
       notNull: true,
     },
+    status: {
+      type: 'string',
+      notNull: true,
+    },
     latest: {
       type: 'boolean',
       notNull: true,
@@ -57,10 +65,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   });
 
   pgm.createTable('names', {
-    id: {
-      type: 'serial',
-      primaryKey: true
-    },
+    // id: {
+    //   type: 'serial',
+    //   primaryKey: true
+    // },
     name: {
       type: 'string',
       notNull: true,
@@ -83,13 +91,15 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     zonefile: {
       type: 'bytea',
-      notNull: true
+      notNull: true,
+      default: '' // TODO: Remove this: Added this for inserting data 
     },
     namespace_id: {
-      type: 'serial',
-      referencesConstraintName: 'id',
       notNull: true,
-      references: 'namespaces',
+      type: 'string'
+     // type: 'serial',
+     // referencesConstraintName: 'id',
+      //references: 'namespaces',
     },
     latest: {
       type: 'boolean',
@@ -134,10 +144,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     resolver: 'string',
     namespace_id: {
-      referencesConstraintName:'id',
-      type: 'serial',
-      notNull: true,
-      references: 'namespaces',
+     // referencesConstraintName:'id',
+   //   type: 'serial',
+      type: 'string',   
+     // notNull: true,
+      //references: 'namespaces',
     },
     name: {
       type: 'string',

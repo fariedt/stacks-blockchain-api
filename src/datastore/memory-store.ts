@@ -424,6 +424,11 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
   getNamespaceList(): Promise<{ results: string[] }> {
     throw new Error('Method not implemented.');
   }
+
+  getNamespaceIdFromName(args: { namespace: string }): Promise<{ results: string[] }> {
+    throw new Error('Method not implemented. ');
+  }
+
   getNamespaceNamesList(args: { namespace: string; page: number }): Promise<{ results: string[] }> {
     throw new Error('Method not implemented.');
   }

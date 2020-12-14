@@ -2563,11 +2563,29 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       `
       SELECT namespace_id
       FROM namespaces
-      ORDER BY namespace_id
+      WHERE latest = true
+      ORDER BY namespace_id 
       `
     );
 
     const results = queryResult.rows.map(r => r.namespace_id);
+    return { results };
+  }
+
+  async getNamespaceIdFromName(args: { namespace: string }) {
+    const queryResult = await this.pool.query(
+      `
+      SELECT namespace_id
+      FROM namespaces
+      WHERE namespace_id = $1
+      AND latest = true
+      `,
+      [args.namespace]
+    );
+
+    console.log('Query Results', queryResult);
+    const results: string[] = queryResult.rows.map(r => r.id);
+    console.log('Query Results Map', results);
     return { results };
   }
   async getNamespaceNamesList(args: { namespace: string; page: number }) {

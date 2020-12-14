@@ -396,6 +396,12 @@ export interface DataStore extends DataStoreEventEmitter {
     results: string[];
   }>;
 
+  getNamespaceIdFromName(args: {
+    namespace: string;
+  }): Promise<{
+    results: string[];
+  }>;
+
   getNamespaceNamesList(args: {
     namespace: string;
     page: number;
