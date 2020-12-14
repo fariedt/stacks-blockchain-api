@@ -21,8 +21,7 @@ export function createBNSNamespacesRouter(db: DataStore): RouterWithAsync {
     const { tld } = req.params;
     const page = parsePagingQueryInput(req.query.page ?? 0);
 
-    //const response = await db.getNamespaceIdFromName({ namespace: tld });
-    const response = await db.getNamespace({ namespace: tld, latest: true });
+    const response = await db.getNamespace({ namespace: tld });
     if (!response.found) {
       res.status(404).json(BNSErrors.NoSuchNamespace);
     } else {
@@ -44,7 +43,9 @@ export function createBNSNamesRouter(db: DataStore): RouterWithAsync {
     const page = parsePagingQueryInput(req.query.page ?? 0);
 
     const { results } = await db.getNamesList({ page });
-
+    if (results.length === 0 && req.query.page) {
+      res.status(400).json(BNSErrors.InvalidPageNumber);
+    }
     res.json(results);
   });
 
