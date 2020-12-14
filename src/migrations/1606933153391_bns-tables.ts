@@ -15,7 +15,8 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     launched_at: {
       type: 'integer',
-      notNull: true
+      notNull: true,
+      default: 0 //TODO: remove this . Added for testing purpose.
     },
     address: {
       type: 'string',
@@ -55,6 +56,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     status: {
       type: 'string',
+      notNull: true,
+      default: '' // TODO: remove this added for testing..
+    },
+    tx_id: {
+      type: 'bytea',
       notNull: true,
     },
     latest: {
@@ -100,6 +106,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
      // type: 'serial',
      // referencesConstraintName: 'id',
       //references: 'namespaces',
+    },
+    tx_id: {
+      type: 'bytea',
+      notNull: true,
+      default: '' // TODO: remove this : Added this for inserting data
     },
     latest: {
       type: 'boolean',

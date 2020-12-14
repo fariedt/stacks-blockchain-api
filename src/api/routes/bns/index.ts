@@ -4,6 +4,7 @@ import { DataStore } from '../../../datastore/common';
 import { parsePagingQueryInput } from '../../../api/pagination';
 import { computeNamespacePrice, computeNamePrice } from '../../../helpers';
 import { BNSGetAllNamespacesResponse } from '@blockstack/stacks-blockchain-api-types';
+import { BNSErrors } from '../../bns-constants';
 
 export function createBNSNamespacesRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -20,19 +21,17 @@ export function createBNSNamespacesRouter(db: DataStore): RouterWithAsync {
     const { tld } = req.params;
     const page = parsePagingQueryInput(req.query.page ?? 0);
 
-    const response = await db.getNamespaceIdFromName({ namespace: tld });
-    //res.json(response.results);
-    // console.log('Names', response.results);
-
-    if (response.results.length == 0) {
-      res.json('Something went wrong');
+    //const response = await db.getNamespaceIdFromName({ namespace: tld });
+    const response = await db.getNamespace({ namespace: tld, latest: true });
+    if (!response.found) {
+      res.status(404).json(BNSErrors.NoSuchNamespace);
     } else {
       const { results } = await db.getNamespaceNamesList({ namespace: tld, page });
+      if (results.length === 0 && req.query.page) {
+        res.status(400).json(BNSErrors.InvalidPageNumber);
+      }
       res.json(results);
     }
-    // res.json(response);
-    //const { results } = await db.getNamespaceNamesList({ namespace: tld, page });
-    //res.json(results);
   });
 
   return router;
