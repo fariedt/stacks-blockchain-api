@@ -2638,15 +2638,15 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     return { results };
   }
 
-  async getNamespace(args: { namespace: string; latest?: boolean }) {
+  async getNamespace(args: { namespace: string }) {
     const queryResult = await this.pool.query(
       `
       SELECT *
       FROM namespaces
       WHERE namespace_id = $1
-      AND latest = $2      
+      AND latest = true      
       `,
-      [args.namespace, args.latest ? args.latest : false]
+      [args.namespace]
     );
     if (queryResult.rowCount > 0) {
       return {

@@ -421,7 +421,7 @@ export interface DataStore extends DataStoreEventEmitter {
     results: string[];
   }>;
 
-  getNamespace(args: { namespace: string; latest?: boolean }): Promise<FoundOrNot<DbBNSNamespace>>;
+  getNamespace(args: { namespace: string }): Promise<FoundOrNot<DbBNSNamespace>>;
   getName(args: { name: string }): Promise<FoundOrNot<DbBNSName>>;
   getHistoricalZoneFile(args: {
     name: string;
