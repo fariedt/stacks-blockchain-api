@@ -12,6 +12,7 @@ import {
 import { c32address } from 'c32check';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
 import { getTxSenderAddress } from '../event-stream/reader';
+import BN = require('bn.js');
 
 export interface DbBlock {
   block_hash: string;
@@ -285,8 +286,9 @@ export interface DbStxBalance {
 }
 
 export interface DbBNSNamespace {
-  namespace: string;
+  namespace_id: string;
   address: string;
+  launched_at: number;
   reveal_block: number;
   ready_block: number;
   buckets: string;
@@ -294,19 +296,26 @@ export interface DbBNSNamespace {
   coeff: number;
   nonalpha_discount: number;
   no_vowel_discount: number;
-  lifenumber: number;
+  lifetime: number;
+  status: string;
+  latest: boolean;
+  tx_id: Buffer;
 }
 
 export interface DbBNSName {
+  name: string;
   address: string;
-  blockchain: string;
+  namespace_id: string;
+  registered_at: number;
+  // blockchain: string;
   expire_block: number;
-  grace_period: number;
-  renewal_deadline: number;
-  resolver: string | undefined;
-  status: string;
-  zonefile: string;
+  // grace_period: number;
+  // renewal_deadline: number;
+  // resolver: string | undefined;
+  zonefile: Buffer;
   zonefile_hash: string;
+  latest: boolean;
+  tx_id: Buffer;
 }
 export interface DbBNSZoneFile {
   zonefile: string;
@@ -391,6 +400,16 @@ export interface DataStore extends DataStoreEventEmitter {
   searchPrincipal(args: { principal: string }): Promise<FoundOrNot<DbSearchResult>>;
 
   insertFaucetRequest(faucetRequest: DbFaucetRequest): Promise<void>;
+
+  /**
+   * Update namesspaces in the database
+   */
+  updateNamespaces(namespace: DbBNSNamespace): Promise<void>;
+
+  /**
+   * Update names in the database
+   */
+  updateNames(name: DbBNSName): Promise<void>;
 
   getNamespaceList(): Promise<{
     results: string[];

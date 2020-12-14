@@ -444,6 +444,13 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
   getName(args: { name: string }): Promise<FoundOrNot<DbBNSName>> {
     throw new Error('Method not implemented.');
   }
+  updateNames(name: DbBNSName): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  updateNamespaces(namespace: DbBNSNamespace): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
   getHistoricalZoneFile(args: {
     name: string;
     zoneFileHash: string;

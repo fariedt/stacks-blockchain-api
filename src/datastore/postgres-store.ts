@@ -44,6 +44,7 @@ import {
   DbBurnchainReward,
   DbBNSName,
   DbBNSZoneFile,
+  DbBNSNamespace,
 } from './common';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
 import { getTxTypeId } from '../api/controllers/db-controller';
@@ -2556,6 +2557,87 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     );
     const results = queryResult.rows.map(r => this.parseFaucetRequestQueryResult(r));
     return { results };
+  }
+
+  async updateNames(name: DbBNSName) {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN'); //TODO explore begin with special function
+
+      await client.query(`UPDATE names SET latest = $1 WHERE name= $2`, [false, name.name]);
+
+      await client.query(
+        `
+        INSERT INTO names(
+          name, address, registered_at, expire_block, zonefile_hash, zonefile, namespace_id, latest, tx_id
+        ) values($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `,
+        [
+          name.name,
+          name.address,
+          name.registered_at,
+          name.expire_block,
+          name.zonefile_hash,
+          name.zonefile,
+          name.namespace_id,
+          name.latest,
+          name.tx_id,
+        ]
+      );
+
+      await client.query('COMMIT');
+    } catch (error) {
+      logError(`Error performing PG update: ${error}`, error);
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateNamespaces(namespace: DbBNSNamespace) {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      await client.query(`UPDATE namespaces SET latest = $1 WHERE namespace_id= $2`, [
+        false,
+        namespace.namespace_id,
+      ]);
+
+      await client.query(
+        `
+        INSERT INTO namespaces(
+          namespace_id, launched_at, address, reveal_block, ready_block, buckets,
+          base,coeff,nonalpha_discount,no_vowel_discount,lifetime,status,latest,tx_id
+        ) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        `,
+        [
+          namespace.namespace_id,
+          namespace.launched_at,
+          namespace.address,
+          namespace.reveal_block,
+          namespace.ready_block,
+          namespace.buckets,
+          namespace.base,
+          namespace.coeff,
+          namespace.nonalpha_discount,
+          namespace.no_vowel_discount,
+          namespace.lifetime,
+          namespace.status,
+          namespace.latest,
+          namespace.tx_id,
+        ]
+      );
+
+      await client.query('COMMIT');
+    } catch (error) {
+      logError(`Error performing PG update: ${error}`, error);
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async getNamespaceList() {

@@ -6,11 +6,12 @@ import * as bodyParser from 'body-parser';
 import { addAsync } from '@awaitjs/express';
 import PQueue from 'p-queue';
 
-import { hexToBuffer, logError, logger, digestSha512_256 } from '../helpers';
+import { hexToBuffer, logError, logger, digestSha512_256, jsonStringify } from '../helpers';
 import {
   CoreNodeBlockMessage,
   CoreNodeEventType,
   CoreNodeBurnBlockMessage,
+  CoreNodeParsedTxMessage,
 } from './core-node-message';
 import {
   DataStore,
@@ -28,10 +29,205 @@ import {
   DbStxLockEvent,
   DbMinerReward,
   DbBurnchainReward,
+  DbBNSNamespace,
+  DbBNSName,
 } from '../datastore/common';
 import { parseMessageTransactions, getTxSenderAddress, getTxSponsorAddress } from './reader';
 import { TransactionPayloadTypeID, readTransaction } from '../p2p/tx';
-import { BufferReader } from '@stacks/transactions';
+import {
+  deserializeCV,
+  ClarityType,
+  ClarityValue,
+  BufferCV,
+  StandardPrincipalCV,
+  TupleCV,
+  BufferReader,
+  Address,
+  IntCV,
+  addressToString,
+  StringAsciiCV,
+  SomeCV,
+  UIntCV,
+  ListCV,
+} from '@stacks/transactions';
+
+import { StacksCoreRpcClient, getCoreNodeEndpoint } from './../core-rpc/client';
+import { Name } from 'node-pg-migrate';
+import BN = require('bn.js');
+
+interface Attachment {
+  attachment: {
+    hash: string;
+    metadata: {
+      name: string;
+      namespace: string;
+      tx_sender: Address;
+    };
+    page_index: number;
+    position_in_page: string;
+  };
+}
+
+export function parseNameRawValue(rawValue: string): Attachment {
+  const cl_val: ClarityValue = deserializeCV(hexToBuffer(rawValue));
+  console.log('metadat CV: ', jsonStringify(cl_val));
+  if (cl_val.type == ClarityType.Tuple) {
+    const attachment = cl_val.data['attachment'] as TupleCV;
+
+    const hash: BufferCV = attachment.data['hash'] as BufferCV;
+    const contentHash = hash.buffer.toString('hex');
+
+    const metadataCV: TupleCV = attachment.data['metadata'] as TupleCV;
+
+    const nameCV: BufferCV = metadataCV.data['name'] as BufferCV;
+    const name = nameCV.buffer.toString();
+    const namespaceCV: BufferCV = metadataCV.data['namespace'] as BufferCV;
+    const namespace = namespaceCV.buffer.toString();
+    const addressCV: StandardPrincipalCV = metadataCV.data['tx-sender'] as StandardPrincipalCV;
+    const address = addressCV.address;
+
+    const page_indexCV: IntCV = metadataCV.data['namespace'] as IntCV;
+    const page_index = page_indexCV.value;
+    const position_in_pageCV: IntCV = metadataCV.data['namespace'] as IntCV;
+    const position_in_page = position_in_pageCV.value;
+
+    const result: Attachment = {
+      attachment: {
+        hash: contentHash,
+        metadata: {
+          name: name,
+          namespace: namespace,
+          tx_sender: address,
+        },
+        page_index: page_index,
+        position_in_page: position_in_page,
+      },
+    };
+
+    console.log('metadat: ', metadataCV);
+    console.log('hash: ', contentHash);
+    console.log('metadat name: ', name);
+    console.log('metadat namespace: ', namespace);
+    console.log('metadat address: ', address);
+    return result;
+  }
+  throw Error('Value can not be parsed');
+}
+
+export function parseNamespaceRawValue(rawValue: string): DbBNSNamespace | undefined {
+  const cl_val: ClarityValue = deserializeCV(hexToBuffer(rawValue));
+  if (cl_val.type == ClarityType.Tuple) {
+    const namespaceCV: BufferCV = cl_val.data['namespace'] as BufferCV;
+    const namespace = namespaceCV.buffer.toString();
+    const statusCV: StringAsciiCV = cl_val.data['status'] as StringAsciiCV;
+    const status = statusCV.data;
+
+    const properties = cl_val.data['properties'] as TupleCV;
+
+    const launched_atCV = properties.data['launched-at'] as SomeCV;
+    const launch_atintCV = launched_atCV.value as UIntCV;
+    const launched_at = parseInt(launch_atintCV.value.toString());
+    const lifetimeCV = properties.data['lifetime'] as IntCV;
+    const lifetime: BN = lifetimeCV.value;
+    const revealed_atCV = properties.data['revealed-at'] as IntCV;
+    const revealed_at: BN = revealed_atCV.value;
+    const addressCV: StandardPrincipalCV = properties.data[
+      'namespace-import'
+    ] as StandardPrincipalCV;
+    const address = addressCV.address;
+
+    const price_function = properties.data['price-function'] as TupleCV;
+
+    const baseCV = price_function.data['base'] as IntCV;
+    const base: BN = baseCV.value;
+    const coeffCV = price_function.data['coeff'] as IntCV;
+    const coeff: BN = coeffCV.value;
+    const no_vowel_discountCV = price_function.data['no-vowel-discount'] as IntCV;
+    const no_vowel_discount: BN = no_vowel_discountCV.value;
+    const nonalpha_discountCV = price_function.data['nonalpha-discount'] as IntCV;
+    const nonalpha_discount: BN = nonalpha_discountCV.value;
+    const bucketsCV = price_function.data['buckets'] as ListCV;
+
+    const buckets: number[] = [];
+    const listCV = bucketsCV.list;
+    for (let i = 0; i < listCV.length; i++) {
+      const cv = listCV[i];
+      if (cv.type === ClarityType.UInt) {
+        buckets.push(cv.value);
+      }
+    }
+
+    const namespaceBNS: DbBNSNamespace = {
+      namespace_id: namespace,
+      address: addressToString(address),
+      base: base.toNumber(),
+      coeff: coeff.toNumber(),
+      launched_at: launched_at,
+      lifetime: lifetime.toNumber(),
+      no_vowel_discount: no_vowel_discount.toNumber(),
+      nonalpha_discount: nonalpha_discount.toNumber(),
+      ready_block: 0,
+      reveal_block: revealed_at.toNumber(),
+      status: status,
+      latest: true,
+      buckets: buckets.toString(),
+      tx_id: Buffer.from('0x00'),
+    };
+    return namespaceBNS;
+  }
+}
+
+interface AttachmentValue {
+  attachment: {
+    content: number[];
+  };
+}
+
+export async function parseContentHash(contentHash: string): Promise<string> {
+  // { host: '127.0.0.1', port: '20443' }
+  let result: AttachmentValue | undefined = undefined;
+  try {
+    result = await new StacksCoreRpcClient().fetchJson<AttachmentValue>(
+      `v2/attachments/${contentHash}`,
+      {
+        method: 'GET',
+        timeout: 10 * 1000, //10 seconds
+      }
+    );
+  } catch (error) {}
+
+  // const attachment: Attachment = {
+  //   attachment: {
+  //     content: [250, 202, 222, 1],
+  //   },
+  // };
+  if (result === undefined) {
+    // result = {
+    //   attachment: {
+    //     content: [250, 202, 222, 1],
+    //   },
+    // };
+    throw Error('Error: can not get content hash');
+  }
+  let content = '';
+  for (const char of result.attachment.content) {
+    content = content + char.toString(16);
+  }
+  console.log('attachment result', content);
+  return content;
+}
+
+function getFunctionName(tx_id: string, transactions: CoreNodeParsedTxMessage[]): string {
+  let parsed_tx: CoreNodeParsedTxMessage | null = null;
+  const contract_function_name: string = '';
+  for (const tx of transactions) {
+    if (tx.core_tx.txid === tx_id) parsed_tx = tx;
+  }
+  if (parsed_tx && parsed_tx.parsed_tx.payload.typeId === TransactionPayloadTypeID.ContractCall) {
+    return parsed_tx.parsed_tx.payload.functionName;
+  }
+  return contract_function_name;
+}
 
 async function handleBurnBlockMessage(
   burnBlockMsg: CoreNodeBurnBlockMessage,
@@ -119,7 +315,7 @@ async function handleClientMessage(msg: CoreNodeBlockMessage, db: DataStore): Pr
   );
 
   const dbMinerRewards: DbMinerReward[] = [];
-  for (const minerReward of msg.matured_miner_rewards) {
+  for (const minerReward of msg.matured_miner_rewards ?? []) {
     const dbMinerReward: DbMinerReward = {
       canonical: true,
       block_hash: minerReward.from_stacks_block_hash,
@@ -182,6 +378,7 @@ async function handleClientMessage(msg: CoreNodeBlockMessage, db: DataStore): Pr
 
     switch (event.type) {
       case CoreNodeEventType.ContractEvent: {
+        logger.verbose(`------Contract Event received  ${JSON.stringify(event)}`);
         const entry: DbSmartContractEvent = {
           ...dbEvent,
           event_type: DbEventTypeId.SmartContractLog,
@@ -190,6 +387,47 @@ async function handleClientMessage(msg: CoreNodeBlockMessage, db: DataStore): Pr
           value: hexToBuffer(event.contract_event.raw_value),
         };
         dbTx.contractLogEvents.push(entry);
+        if (
+          event.contract_event.topic === 'print' &&
+          event.contract_event.contract_identifier === 'ST000000000000000000002AMW42H.bns'
+        ) {
+          console.log(
+            `tx_id:  ${event.txid} parse transaction: ${getFunctionName(
+              event.txid,
+              parsedMsg.parsed_transactions
+            )}`
+          );
+          if (getFunctionName(event.txid, parsedMsg.parsed_transactions) === 'name-import') {
+            const attachment = parseNameRawValue(event.contract_event.raw_value);
+            const attachmentValue = await parseContentHash(attachment.attachment.hash);
+            const names: DbBNSName = {
+              name: attachment.attachment.metadata.name,
+              namespace_id: attachment.attachment.metadata.namespace,
+              address: addressToString(attachment.attachment.metadata.tx_sender),
+              expire_block: 0,
+              registered_at: parsedMsg.burn_block_time,
+              zonefile_hash: attachment.attachment.hash,
+              zonefile: Buffer.from(event.txid),
+              latest: true,
+              tx_id: hexToBuffer(event.txid),
+            };
+            console.log('update names ', JSON.stringify(names));
+            await db.updateNames(names);
+          } else if (
+            getFunctionName(event.txid, parsedMsg.parsed_transactions) === 'namespace-ready'
+          ) {
+            //event received for namespaces
+            const namespace: DbBNSNamespace | undefined = parseNamespaceRawValue(
+              event.contract_event.raw_value
+            );
+            if (namespace != undefined) {
+              namespace.ready_block = parsedMsg.burn_block_time;
+              namespace.tx_id = hexToBuffer(event.txid);
+              console.log('update namespaces ', JSON.stringify(namespace));
+              await db.updateNamespaces(namespace);
+            }
+          }
+        }
         break;
       }
       case CoreNodeEventType.StxLockEvent: {
@@ -370,6 +608,7 @@ export async function startEventServer(opts: {
   });
 
   app.postAsync('/new_block', async (req, res) => {
+    console.log(JSON.stringify(req.body, null, 2));
     try {
       const msg: CoreNodeBlockMessage = req.body;
       await messageHandler.handleBlockMessage(msg, db);
@@ -378,6 +617,13 @@ export async function startEventServer(opts: {
       logError(`error processing core-node /new_block: ${error}`, error);
       res.status(500).json({ error: error });
     }
+  });
+
+  app.postAsync('/attachments/new', (req, res) => {
+    console.log('---- new_attachment');
+    console.log(JSON.stringify(req.body, null, 2));
+    console.log('---- new_attachment');
+    res.status(200).json({ result: 'ok' });
   });
 
   app.postAsync('/new_burn_block', async (req, res) => {
