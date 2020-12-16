@@ -40,10 +40,31 @@ describe('BNS API', () => {
     expect(valid.valid).toBe(true);
   });
 
-  test('Success Name', async () => {
+  test('Success: names', async () => {
     const query1 = await supertest(api.server).get(`/v1/names`);
     expect(query1.status).toBe(200);
     expect(query1.type).toBe('application/json');
+  });
+
+  test('Validate: names response schema', async () => {
+    const query1 = await supertest(api.server).get('/v1/names');
+    const result = JSON.parse(query1.text);
+    const path = require.resolve(
+      '@blockstack/stacks-blockchain-api-types/api/bns/name-querying/bns-get-all-names-response.schema.json'
+    );
+    const valid = await validate(path, result);
+    expect(valid.valid).toBe(true);
+  });
+
+  test('Validate: names length from /v1/names', async () => {
+    const query1 = await supertest(api.server).get('/v1/names');
+    const result = JSON.parse(query1.text);
+    expect(result.length).toBe(0);
+  });
+
+  test('Invalid page from /v1/names', async () => {
+    const query1 = await supertest(api.server).get('/v1/names?page=1');
+    expect(query1.status).toBe(400);
   });
 
   test('Success Subdomain', async () => {
