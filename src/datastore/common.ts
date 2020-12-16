@@ -299,6 +299,7 @@ export interface DbBNSNamespace {
   lifetime: number;
   status?: string;
   latest: boolean;
+  tx_id?: string;
 }
 
 export interface DbBNSName {
@@ -315,6 +316,8 @@ export interface DbBNSName {
   zonefile: string;
   zonefile_hash: string;
   latest: boolean;
+  tx_id?: string;
+  status?: string;
 }
 
 export interface DataStore extends DataStoreEventEmitter {
