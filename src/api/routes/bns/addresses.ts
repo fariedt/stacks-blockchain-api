@@ -19,7 +19,7 @@ export function createBNSAddressesRouter(db: DataStore): RouterWithAsync {
       address: address,
     });
     if (namesByAddress.found) {
-      res.json({names :namesByAddress.result });
+      res.json({ names: namesByAddress.result });
     } else {
       res.json([]);
     }

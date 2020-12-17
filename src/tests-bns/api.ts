@@ -201,7 +201,7 @@ describe('BNS API', () => {
   test('Success names by address', async () => {
     const blockchain = 'stacks';
     const address = 'ST1HB1T8WRNBYB0Y3T7WXZS38NKKPTBR3EG9EPJKR';
-    const name = 'test-name'
+    const name = 'test-name';
 
     const dbName: DbBNSName = {
       name: name,
@@ -212,7 +212,7 @@ describe('BNS API', () => {
       zonefile_hash: 'zonefileHash',
       latest: true,
       registered_at: 1000,
-      blockchain: blockchain
+      blockchain: blockchain,
     };
     await db.updateNames(dbName);
 
@@ -223,7 +223,6 @@ describe('BNS API', () => {
   });
 
   test('Fail names by address - Blockchain not support', async () => {
-
     const query1 = await supertest(api.server).get(`/v1/addresses/invalid/test`);
     expect(query1.status).toBe(404);
     expect(query1.body.error).toBe('Unsupported blockchain');
