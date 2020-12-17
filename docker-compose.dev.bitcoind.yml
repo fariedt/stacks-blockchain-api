@@ -1,20 +1,19 @@
 version: '3.7'
 services:
   bitcoind:
-    image: "ruimarinho/bitcoin-core:0.19.1-alpine"
+    image: 'ruimarinho/bitcoin-core:0.19.1-alpine'
     ports:
-      - "18443:18443"
-      - "18444:18444"
-    command: 
-      -printtoconsole
+      - '18443:18443'
+      - '18444:18444'
+    command: -printtoconsole
       -regtest=1
       -txindex=1
       -rpcallowip=0.0.0.0/0
       -rpcbind=0.0.0.0
-      -rpcuser=btc
-      -rpcpassword=btc
+      -rpcuser=helium-node
+      -rpcpassword=secret
   bitcoind-fill-faucet:
-    image: "byrnedo/alpine-curl"
+    image: 'byrnedo/alpine-curl'
     depends_on:
       - bitcoind
     restart: on-failure

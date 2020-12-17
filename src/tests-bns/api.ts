@@ -4,6 +4,9 @@ import { ApiServer, startApiServer } from '../api/init';
 import * as supertest from 'supertest';
 import { startEventServer } from '../event-stream/event-server';
 import { Server } from 'net';
+import { resolveModuleName } from 'typescript';
+import { BNSGetAllNamespacesResponse } from '@blockstack/stacks-blockchain-api-types';
+import * as Ajv from 'ajv';
 import { validate } from '../api/rosetta-validate';
 import { parseNamespaceRawValue, parseContentHash } from '../bns-helpers';
 import { DbBNSName, DbBNSNamespace } from '../datastore/common';
@@ -124,6 +127,107 @@ describe('BNS API', () => {
   test('Success: names returned with page number in namespaces/{namespace}/names', async () => {
     const query1 = await supertest(api.server).get(`/v1/namespaces/abc/names?page=0`);
     expect(query1.status).toBe(200);
+  });
+
+  test('Success zonefile by name and hash', async () => {
+    const name = 'test';
+    const zonefileHash = 'test-hash';
+    const zonefile = 'test-zone-file';
+
+    const dbName: DbBNSName = {
+      name: name,
+      address: 'STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64CP',
+      namespace_id: '',
+      expire_block: 10000,
+      zonefile: zonefile,
+      zonefile_hash: zonefileHash,
+      latest: true,
+      registered_at: 1000,
+    };
+    await db.updateNames(dbName);
+
+    const query1 = await supertest(api.server).get(`/v1/names/${name}/zonefile/${zonefileHash}`);
+    expect(query1.status).toBe(200);
+    expect(query1.body.zonefile).toBe('test-zone-file');
+    expect(query1.type).toBe('application/json');
+  });
+
+  test('Fail zonefile by name - Invalid name', async () => {
+    const name = 'test';
+    const zonefileHash = 'test-hash';
+    const zonefile = 'test-zone-file';
+
+    const dbName: DbBNSName = {
+      name: name,
+      address: 'STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64CP',
+      namespace_id: '',
+      expire_block: 10000,
+      zonefile: zonefile,
+      zonefile_hash: zonefileHash,
+      latest: true,
+      registered_at: 1000,
+    };
+    await db.updateNames(dbName);
+
+    const query1 = await supertest(api.server).get(`/v1/names/invalid/zonefile/${zonefileHash}`);
+    expect(query1.status).toBe(400);
+    expect(query1.body.error).toBe('Invalid name or subdomain');
+    expect(query1.type).toBe('application/json');
+  });
+
+  test('Fail zonefile by name - No zonefile found', async () => {
+    const name = 'test';
+    const zonefileHash = 'test-hash';
+    const zonefile = 'test-zone-file';
+
+    const dbName: DbBNSName = {
+      name: name,
+      address: 'STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64CP',
+      namespace_id: '',
+      expire_block: 10000,
+      zonefile: zonefile,
+      zonefile_hash: zonefileHash,
+      latest: true,
+      registered_at: 1000,
+    };
+    await db.updateNames(dbName);
+
+    const query1 = await supertest(api.server).get(`/v1/names/${name}/zonefile/invalidHash`);
+    expect(query1.status).toBe(404);
+    expect(query1.body.error).toBe('No such zonefile');
+    expect(query1.type).toBe('application/json');
+  });
+
+  test('Success names by address', async () => {
+    const blockchain = 'stacks';
+    const address = 'ST1HB1T8WRNBYB0Y3T7WXZS38NKKPTBR3EG9EPJKR';
+    const name = 'test-name'
+
+    const dbName: DbBNSName = {
+      name: name,
+      address: address,
+      namespace_id: '',
+      expire_block: 10000,
+      zonefile: 'test-zone-file',
+      zonefile_hash: 'zonefileHash',
+      latest: true,
+      registered_at: 1000,
+      blockchain: blockchain
+    };
+    await db.updateNames(dbName);
+
+    const query1 = await supertest(api.server).get(`/v1/addresses/${blockchain}/${address}`);
+    expect(query1.status).toBe(200);
+    expect(query1.body.names[0]).toBe(name);
+    expect(query1.type).toBe('application/json');
+  });
+
+  test('Fail names by address - Blockchain not support', async () => {
+
+    const query1 = await supertest(api.server).get(`/v1/addresses/invalid/test`);
+    expect(query1.status).toBe(404);
+    expect(query1.body.error).toBe('Unsupported blockchain');
+    expect(query1.type).toBe('application/json');
   });
 
   afterAll(async () => {
