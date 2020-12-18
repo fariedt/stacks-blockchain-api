@@ -452,6 +452,10 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
     throw new Error('Method not implemented.');
   }
 
+  getLatestZoneFile(args: { name: string }): Promise<FoundOrNot<DbBNSZoneFile>> {
+    throw new Error('Method not implemented.');
+  }
+
   getNamesByAddressList(args: {
     blockchain: string;
     address: string;

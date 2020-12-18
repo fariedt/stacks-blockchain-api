@@ -431,6 +431,7 @@ export interface DataStore extends DataStoreEventEmitter {
     name: string;
     zoneFileHash: string;
   }): Promise<FoundOrNot<DbBNSZoneFile>>;
+  getLatestZoneFile(args: { name: string }): Promise<FoundOrNot<DbBNSZoneFile>>;
   getNamesByAddressList(args: {
     blockchain: string;
     address: string;

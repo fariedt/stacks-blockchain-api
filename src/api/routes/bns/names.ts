@@ -22,5 +22,22 @@ export function createBNSNamesRouter(db: DataStore): RouterWithAsync {
     }
   });
 
+  router.getAsync('/:name/zonefile', async (req, res) => {
+    // Fetch a user’s raw zone file. This only works for RFC-compliant zone files. This method returns an error for names that have non-standard zone files.
+    const { name } = req.params;
+
+    const nameQuery = await db.getName({ name: name });
+    if (nameQuery.found) {
+      const zonefile = await db.getLatestZoneFile({ name: name });
+      if (zonefile.found) {
+        res.json(zonefile.result);
+      } else {
+        res.status(404).json({ error: 'No zone file for name' });
+      }
+    } else {
+      res.status(400).json({ error: 'Invalid name or subdomain' });
+    }
+  });
+
   return router;
 }

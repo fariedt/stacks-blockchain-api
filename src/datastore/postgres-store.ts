@@ -2870,6 +2870,28 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     }
     return { found: false } as const;
   }
+
+  async getLatestZoneFile(args: { name: string }): Promise<FoundOrNot<DbBNSZoneFile>> {
+    const queryResult = await this.pool.query(
+      `
+      SELECT zonefile
+      FROM names
+      WHERE name = $1
+      AND
+      latest = $2
+      `,
+      [args.name, true]
+    );
+
+    if (queryResult.rowCount > 0) {
+      return {
+        found: true,
+        result: queryResult.rows[0],
+      };
+    }
+    return { found: false } as const;
+  }
+
   async getNamesByAddressList(args: {
     blockchain: string;
     address: string;

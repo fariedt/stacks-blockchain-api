@@ -229,6 +229,37 @@ describe('BNS API', () => {
     expect(query1.type).toBe('application/json');
   });
 
+  test('Success get zonefile by name', async () => {
+    const zonefile = 'test-zone-file';
+    const address = 'ST1HB1T8WRNBYB0Y3T7WXZS38NKKPTBR3EG9EPJKR';
+    const name = 'zonefile-test-name';
+
+    const dbName: DbBNSName = {
+      name: name,
+      address: address,
+      namespace_id: '',
+      expire_block: 10000,
+      zonefile: 'test-zone-file',
+      zonefile_hash: 'zonefileHash',
+      latest: true,
+      registered_at: 1000,
+      blockchain: 'stacks',
+    };
+    await db.updateNames(dbName);
+
+    const query1 = await supertest(api.server).get(`/v1/names/${name}/zonefile`);
+    expect(query1.status).toBe(200);
+    expect(query1.body.zonefile).toBe(zonefile);
+    expect(query1.type).toBe('application/json');
+  });
+
+  test('Fail get zonefile by name - invalid name', async () => {
+    const query1 = await supertest(api.server).get(`/v1/names/invalidName/zonefile`);
+    expect(query1.status).toBe(400);
+    expect(query1.body.error).toBe('Invalid name or subdomain');
+    expect(query1.type).toBe('application/json');
+  });
+
   afterAll(async () => {
     await new Promise(resolve => eventServer.close(() => resolve()));
     await api.terminate();
