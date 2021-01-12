@@ -220,6 +220,14 @@ export interface BNSGetNameHistoryResponse {
 }
 
 /**
+ * Fetch price for name.
+ */
+export interface BNSGetNamePriceResponse {
+  units?: string;
+  amount?: string;
+}
+
+/**
  * Retrieves a list of names owned by the address provided.
  */
 export interface BNSNamesOwnByAddressResponse {
@@ -257,6 +265,14 @@ export type BNSGetAllNamespacesNamesResponse = string[];
  */
 export interface BNSGetAllNamespacesResponse {
   namespaces: string[];
+}
+
+/**
+ * Fetch price for namespace.
+ */
+export interface BNSGetNamespacePriceResponse {
+  units: string;
+  amount: string;
 }
 
 /**
