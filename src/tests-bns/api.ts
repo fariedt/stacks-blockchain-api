@@ -138,6 +138,21 @@ describe('BNS API', () => {
     expect(query1.type).toBe('application/json');
   });
 
+  test('Success:  namespace price', async () => {
+    const query1 = await supertest(api.server).get(`/v2/prices/namespaces/abc`);
+    expect(query1.status).toBe(200);
+  });
+
+  test('Success:  validate namespace price schema', async () => {
+    const query1 = await supertest(api.server).get(`/v2/prices/namespaces/abc`);
+    const result = JSON.parse(query1.text);
+    const path = require.resolve(
+      '@blockstack/stacks-blockchain-api-types/api/bns/namespace-operations/bns-get-namespace-price-response.schema.json'
+    );
+    const valid = await validate(path, result);
+    expect(valid.valid).toBe(true);
+  });
+
   test('Fail names price invalid name', async () => {
     // if name is without dot
     const query1 = await supertest(api.server).get(`/v2/prices/names/withoutdot`);

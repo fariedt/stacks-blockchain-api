@@ -14,6 +14,10 @@ import {
   listCV,
 } from '@stacks/transactions';
 import { GetStacksTestnetNetwork } from './../../../bns-helpers';
+import {
+  BNSGetNamePriceResponse,
+  BNSGetNamespacePriceResponse,
+} from '@blockstack/stacks-blockchain-api-types';
 
 export function createBNSPriceRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -38,11 +42,12 @@ export function createBNSPriceRouter(db: DataStore): RouterWithAsync {
     };
     try {
       const contractCallTx = await callReadOnlyFunction(txOptions);
+      console.log('Contract call response', JSON.stringify(contractCallTx));
       if (
         contractCallTx.type == ClarityType.ResponseOk &&
         contractCallTx.value.type == ClarityType.UInt
       ) {
-        const response = {
+        const response: BNSGetNamespacePriceResponse = {
           units: 'STX',
           amount: contractCallTx.value.value.toString(10),
         };
@@ -100,7 +105,7 @@ export function createBNSPriceRouter(db: DataStore): RouterWithAsync {
       contractCall.type == ClarityType.ResponseOk &&
       contractCall.value.type == ClarityType.UInt
     ) {
-      const response = {
+      const response: BNSGetNamePriceResponse = {
         units: 'STX',
         amount: contractCall.value.value.toString(10),
       };
