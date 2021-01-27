@@ -2877,7 +2877,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     return { found: false } as const;
   }
 
-  async getNameCount(args: {includeExpired: number}) {
+  async getNameCount(args: {expired: number}) {
     const queryResult = await this.pool.query(
       `
       SELECT COUNT(*)
@@ -2885,7 +2885,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       FROM names
       WHERE expire_block >= $1 
       `,
-      [args.includeExpired]
+      [args.expired]
     );
     return {result: queryResult.rows[0]} as const
   }

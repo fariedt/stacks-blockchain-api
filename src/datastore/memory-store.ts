@@ -437,7 +437,7 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
     throw new Error('Method not implemented.');
   }
 
-  getNameCount(args: {includeExpired: number}): Promise<{result: number}> {
+  getNameCount(args: {expired: number}): Promise<{result: number}> {
     throw new Error('Method not implemented.');
   }
 

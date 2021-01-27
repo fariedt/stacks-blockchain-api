@@ -344,7 +344,7 @@ describe('BNS API', () => {
     expect(query1.status).toBe(404)
   });
 
-  test('Success: getting name count for listed blockchain', async () => {
+  test('Success: getting name count for listed blockchain including expired blocks', async () => {
     const name = 'test-count';
     const zonefileHash = 'test-hash-for-count';
     const zonefile = 'test-zone-file-for-count';
@@ -368,6 +368,32 @@ describe('BNS API', () => {
     const result = JSON.parse(query1.text);
     let nameCount = parseInt(result.names_count)
     expect(nameCount).toBe(7)
+  });
+
+  test('Success: getting name count for listed blockchain excluding expired blocks', async () => {
+    const name = 'test-count2';
+    const zonefileHash = 'test-hash-for-count2';
+    const zonefile = 'test-zone-file-for-count2';
+
+    const dbName: DbBNSName = {
+      name: name,
+      address: 'STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31SHAFIN',
+      namespace_id: '',
+      expire_block: 1000000,
+      zonefile: zonefile,
+      zonefile_hash: zonefileHash,
+      latest: true,
+      registered_at: 1000,
+      canonical: true,
+    };
+    await db.updateNames(client, dbName);
+
+    const query1 = await supertest(api.server).get(`/v1/blockchains/stacks/name_count?all=false`)
+    expect(query1.status).toBe(200)
+    expect(query1.type).toBe('application/json')
+    const result = JSON.parse(query1.text);
+    let nameCount = parseInt(result.names_count)
+    expect(nameCount).toBe(8)
   });
    
   afterAll(async () => {
