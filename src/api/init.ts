@@ -29,6 +29,7 @@ import { createBNSNamespacesRouter } from './routes/bns/namespaces';
 import { createBNSPriceRouter } from './routes/bns/pricing';
 import { createBNSNamesRouter } from './routes/bns/names';
 import { createBNSAddressesRouter } from './routes/bns/addresses';
+import { createBNSBlockchainsRouter} from './routes/bns/blockchain';
 
 export interface ApiServer {
   expressApp: ExpressWithAsync;
@@ -136,6 +137,7 @@ export async function startApiServer(
       router.use('/namespaces', createBNSNamespacesRouter(datastore));
       router.use('/names', createBNSNamesRouter(datastore));
       router.use('/addresses', createBNSAddressesRouter(datastore));
+      router.use('/blockchains', createBNSBlockchainsRouter(datastore));
       return router;
     })()
   );
@@ -174,7 +176,7 @@ export async function startApiServer(
   // Setup websockets RPC endpoint
   const wss = createWsRpcRouter(datastore, server);
 
-  await new Promise<Server>((resolve, reject) => {
+  await new Promise<Server | void>((resolve, reject) => { 
     try {
       server.listen(apiPort, apiHost, () => resolve());
     } catch (error) {
@@ -186,7 +188,7 @@ export async function startApiServer(
     for (const socket of serverSockets) {
       socket.destroy();
     }
-    await new Promise((resolve, reject) =>
+    await new Promise<void>((resolve, reject) =>
       wss.close(error => {
         if (error) {
           reject(error);
@@ -195,7 +197,7 @@ export async function startApiServer(
         }
       })
     );
-    await new Promise((resolve, reject) =>
+    await new Promise<void>((resolve, reject) =>
       server.close(error => {
         if (error) {
           reject(error);

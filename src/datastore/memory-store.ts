@@ -437,6 +437,10 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
     throw new Error('Method not implemented.');
   }
 
+  getNameCount(args: {includeExpired: number}): Promise<{result: number}> {
+    throw new Error('Method not implemented.');
+  }
+
   getHistoricalZoneFile(args: {
     name: string;
     zoneFileHash: string;

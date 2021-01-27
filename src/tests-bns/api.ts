@@ -339,6 +339,37 @@ describe('BNS API', () => {
     expect(query1.body.zonefile_hash).toBe('b100a68235244b012854a95f9114695679002af9');
   });
 
+  test('Failure: getting name count from unlisted blockchains', async () => {
+    const query1 = await supertest(api.server).get(`/v1/blockchains/dogecoin/name_count?all=true`);
+    expect(query1.status).toBe(404)
+  });
+
+  test('Success: getting name count for listed blockchain', async () => {
+    const name = 'test-count';
+    const zonefileHash = 'test-hash-for-count';
+    const zonefile = 'test-zone-file-for-count';
+
+    const dbName: DbBNSName = {
+      name: name,
+      address: 'STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64HS',
+      namespace_id: '',
+      expire_block: 0,
+      zonefile: zonefile,
+      zonefile_hash: zonefileHash,
+      latest: true,
+      registered_at: 1000,
+      canonical: true,
+    };
+    await db.updateNames(client, dbName);
+
+    const query1 = await supertest(api.server).get(`/v1/blockchains/stacks/name_count?all=true`)
+    expect(query1.status).toBe(200)
+    expect(query1.type).toBe('application/json')
+    const result = JSON.parse(query1.text);
+    let nameCount = parseInt(result.names_count)
+    expect(nameCount).toBe(7)
+  });
+   
   afterAll(async () => {
     await new Promise(resolve => eventServer.close(() => resolve(true)));
     await api.terminate();
