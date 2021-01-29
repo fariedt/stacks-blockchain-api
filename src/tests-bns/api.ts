@@ -322,7 +322,7 @@ describe('BNS API', () => {
     const valid = await validate(path, result);
     expect(valid.valid).toBe(true);
   });
-
+  
   test('Failure: name info', async () => {
     const query1 = await supertest(api.server).get(`/v1/names/testname`);
     expect(query1.status).toBe(404);
@@ -379,7 +379,7 @@ describe('BNS API', () => {
       name: name,
       address: 'STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31SHAFIN',
       namespace_id: '',
-      expire_block: 1000000,
+      expire_block: 0,
       zonefile: zonefile,
       zonefile_hash: zonefileHash,
       latest: true,

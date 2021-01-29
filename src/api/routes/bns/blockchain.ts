@@ -15,17 +15,21 @@ export function createBNSBlockchainsRouter(db: DataStore): RouterWithAsync {
             res.status(404).json({"error": "Unsupported blockchain"});
             return;
         }
-        
+
         let ignoreBlocks = 0;
         let all = req.query.all;
+        console.log("All query", all)
         if (all === "false") {
-            const blockHeightQuery = await db.getCurrentBlock()
+            const blockHeightQuery = await db.getCurrentBlock();
+            console.log("block height received", blockHeightQuery);
+            console.log("block height found ", blockHeightQuery.found );
             if (blockHeightQuery.found === true) {
-                let recentBlockHeight = blockHeightQuery.result.block_height
-                ignoreBlocks = recentBlockHeight
+                let recentBlockHeight = blockHeightQuery.result.block_height;
+                ignoreBlocks = recentBlockHeight;
+                console.log("Recent block height: ",recentBlockHeight );
             }
         }
-        
+        console.log("ignore blocks:", ignoreBlocks);
         const countQuery = await db.getNameCount({expired: ignoreBlocks});
 
         res.json(countQuery.result)
