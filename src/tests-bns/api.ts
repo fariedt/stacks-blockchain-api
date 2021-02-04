@@ -10,15 +10,7 @@ import * as Ajv from 'ajv';
 import { validate } from '../api/rosetta-validate';
 import { DbBNSName, DbBNSNamespace, DbMempoolTx, DbTx, DbTxStatus } from '../datastore/common';
 import { StacksMocknet, StacksTestnet } from '@stacks/network';
-import { hashSha256Sync } from '@stacks/encryption';
 
-import {
-  namespacePreOrder,
-  namespaceReveal,
-  computeNamespacePrice,
-  canNamespaceBeRegistered,
-  nameImport,
-} from './../../hash';
 import {
   broadcastTransaction,
   bufferCV,
@@ -248,7 +240,7 @@ describe('BNS API', () => {
   //   // await standByForTx(expectedTxId);
   //   expect(true).toBe(true); //check api call for subdomain
   // });
-  
+
   test('Success: namespaces', async () => {
     const query1 = await supertest(api.server).get(`/v1/namespaces`);
     expect(query1.status).toBe(200);
@@ -531,7 +523,6 @@ describe('BNS API', () => {
     );
     expect(query1.body.zonefile_hash).toBe('b100a68235244b012854a95f9114695679002af9');
   });
-
 
   afterAll(async () => {
     await new Promise(resolve => eventServer.close(() => resolve(true)));
