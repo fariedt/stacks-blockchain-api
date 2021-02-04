@@ -8,13 +8,86 @@ import { resolveModuleName } from 'typescript';
 import { BNSGetAllNamespacesResponse } from '@blockstack/stacks-blockchain-api-types';
 import * as Ajv from 'ajv';
 import { validate } from '../api/rosetta-validate';
-import { DbBNSName, DbBNSNamespace } from '../datastore/common';
+import { DbBNSName, DbBNSNamespace, DbMempoolTx, DbTx, DbTxStatus } from '../datastore/common';
+import { StacksMocknet, StacksTestnet } from '@stacks/network';
+import { hashSha256Sync } from '@stacks/encryption';
+
+import {
+  namespacePreOrder,
+  namespaceReveal,
+  computeNamespacePrice,
+  canNamespaceBeRegistered,
+  nameImport,
+} from './../../hash';
+import {
+  broadcastTransaction,
+  bufferCV,
+  bufferCVFromString,
+  callReadOnlyFunction,
+  FungibleConditionCode,
+  getAddressFromPrivateKey,
+  makeContractCall,
+  makeStandardSTXPostCondition,
+  makeSTXTokenTransfer,
+  standardPrincipalCV,
+  TransactionVersion,
+  uintCV,
+  deserializeCV,
+  cvToString,
+  ContractCallOptions,
+  SignedContractCallOptions,
+} from '@stacks/transactions';
+import ripemd160 = require('ripemd160');
+import shajs = require('sha.js');
+import BigNum = require('bn.js');
+import { logger } from '../../src/helpers';
+
+// import { StacksCoreRpcClient } from 'src/core-rpc/client';
+
+function hash160(bfr: Buffer): Buffer {
+  const hash160 = new ripemd160().update(new shajs.sha256().update(bfr).digest()).digest('hex');
+  return Buffer.from(hash160, 'hex');
+}
+
+const network = new StacksMocknet();
+
+const deployedTo = 'ST000000000000000000002AMW42H';
+const deployedName = 'bns';
+
+const pkey = 'cb3df38053d132895220b9ce471f6b676db5b9bf0b4adefb55f2118ece2478df01';
+const address = getAddressFromPrivateKey(pkey, TransactionVersion.Testnet);
+
+const salt = Buffer.from('60104ad42ed976f5b8cfd6341496476aa72d1101', 'hex'); // salt and pepper
+const namespaceBuffer = Buffer.from('alice');
+const namespaceHash = hash160(Buffer.concat([namespaceBuffer, salt]));
+const postConditions = [
+  makeStandardSTXPostCondition(address, FungibleConditionCode.GreaterEqual, new BigNum(1)),
+];
 
 describe('BNS API', () => {
   let db: PgDataStore;
   let client: PoolClient;
   let eventServer: Server;
   let api: ApiServer;
+
+  function standByForTx(expectedTxId: string): Promise<DbTx> {
+    const broadcastTx = new Promise<DbTx>(resolve => {
+      const listener: (info: DbTx | DbMempoolTx) => void = info => {
+        if (
+          info.tx_id === expectedTxId &&
+          (info.status === DbTxStatus.Success ||
+            info.status === DbTxStatus.AbortByResponse ||
+            info.status === DbTxStatus.AbortByPostCondition)
+        ) {
+          api.datastore.removeListener('txUpdate', listener);
+          resolve(info as DbTx);
+        }
+      };
+      api.datastore.addListener('txUpdate', listener);
+    });
+
+    return broadcastTx;
+  }
 
   beforeAll(async () => {
     process.env.PG_DATABASE = 'postgres';
@@ -54,8 +127,128 @@ describe('BNS API', () => {
       canonical: true,
     };
     await db.updateNames(client, name);
+
+    //preorder and reveal namespace to the bns network
+    while (true) {
+      try {
+        const txOptions: SignedContractCallOptions = {
+          contractAddress: deployedTo,
+          contractName: deployedName,
+          functionName: 'namespace-preorder',
+          functionArgs: [bufferCV(namespaceHash), uintCV(64000000000)],
+          senderKey: pkey,
+          validateWithAbi: true,
+          postConditions: postConditions,
+          network,
+        };
+
+        const transaction = await makeContractCall(txOptions);
+        const submitResult = await broadcastTransaction(transaction, network);
+        const preorder = await standByForTx('0x' + transaction.txid());
+        if (preorder.status != 1) logger.error('Namespace preorder error');
+
+        const revealTxOptions: SignedContractCallOptions = {
+          contractAddress: deployedTo,
+          contractName: deployedName,
+          functionName: 'namespace-reveal',
+          functionArgs: [
+            bufferCV(namespaceBuffer),
+            bufferCV(salt),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(1),
+            uintCV(0),
+            standardPrincipalCV(address),
+          ],
+          senderKey: pkey,
+          validateWithAbi: true,
+          network,
+        };
+
+        const revealTransaction = await makeContractCall(revealTxOptions);
+        const revealSubmitResult = await broadcastTransaction(revealTransaction, network);
+        const reveal = await standByForTx('0x' + revealTransaction.txid());
+        if (reveal.status != 1) logger.error('Namespace Reveal Error');
+
+        break;
+      } catch (e) {
+        console.log('error connection', e);
+      }
+    }
   });
 
+  test('name-import contract call', async () => {
+    const txOptions = {
+      contractAddress: deployedTo,
+      contractName: deployedName,
+      functionName: 'name-import',
+      functionArgs: [
+        bufferCV(namespaceBuffer),
+        bufferCVFromString('bob'),
+        standardPrincipalCV(address),
+        bufferCV(hash160(Buffer.from('hello', 'hex'))),
+      ],
+      senderKey: pkey,
+      validateWithAbi: true,
+      network,
+    };
+
+    const transaction = await makeContractCall(txOptions);
+    // const transaction = await nameImport('abcdef', 'hello01');
+
+    // const expectedTxId = '0x' + transaction.txid();
+    const submitResult = await broadcastTransaction(transaction, network);
+    console.log('name import: ', submitResult);
+
+    const result = await standByForTx('0x' + transaction.txid());
+    // if (reveal.status != 1) logger.error('Namespace Reveal Error');
+    console.log('name import: ', submitResult);
+    // expect(true).toBe(true); //check api call for name
+    const query1 = await supertest(api.server).get(`/v1/names/bob`);
+    expect(query1.status).toBe(200);
+    expect(query1.type).toBe('application/json');
+    expect(query1.status).toBe(200);
+  });
+
+  // test('namespace-ready contract call', async () => {
+  //   // const transaction = await nameImport('abcdef', 'hello01');
+
+  //   // const expectedTxId = '0x' + transaction.txid();
+  //   // const submitResult = await broadcastTransaction(transaction, network);
+  //   // console.log('preprder: ', submitResult);
+
+  //   // await standByForTx(expectedTxId);
+  //   expect(true).toBe(true); //check api call for namespace
+  // });
+
+  // test('name-update contract call', async () => {
+  //   // const transaction = await nameImport('abcdef', 'hello01');
+
+  //   // const expectedTxId = '0x' + transaction.txid();
+  //   // const submitResult = await broadcastTransaction(transaction, network);
+  //   // console.log('preprder: ', submitResult);
+
+  //   // await standByForTx(expectedTxId);
+  //   expect(true).toBe(true); //check api call for subdomain
+  // });
+  
   test('Success: namespaces', async () => {
     const query1 = await supertest(api.server).get(`/v1/namespaces`);
     expect(query1.status).toBe(200);
@@ -338,6 +531,7 @@ describe('BNS API', () => {
     );
     expect(query1.body.zonefile_hash).toBe('b100a68235244b012854a95f9114695679002af9');
   });
+
 
   afterAll(async () => {
     await new Promise(resolve => eventServer.close(() => resolve(true)));

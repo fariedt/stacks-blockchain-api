@@ -7,7 +7,7 @@ RUN echo "GIT_TAG=$(git tag --points-at HEAD)" >> .env
 RUN npm config set unsafe-perm true && npm install && npm run build && npm prune --production
 
 ### Fetch stacks-node binary
-FROM blockstack/stacks-blockchain:v24.2.2.0-xenon-stretch as stacks-node-build
+FROM blockstack/stacks-blockchain:2.0.0-rc1 as stacks-node-build
 
 ### Begin building base image
 FROM ubuntu:focal
@@ -28,8 +28,8 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 ### stacky user ###
 # see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 RUN useradd -l -u 33333 -G sudo -md /home/stacky -s /bin/bash -p stacky stacky \
-    # passwordless sudo for users in the 'sudo' group
-    && sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers
+  # passwordless sudo for users in the 'sudo' group
+  && sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers
 ENV HOME=/home/stacky
 WORKDIR $HOME
 USER stacky
@@ -87,19 +87,19 @@ ENV STACKS_CORE_RPC_PORT=20443
 
 ### Startup script & coordinator
 RUN printf '#!/bin/bash\n\
-trap "exit" INT TERM\n\
-trap "kill 0" EXIT\n\
-echo Your container args are: "$@"\n\
-tail --retry -F stacks-api.log stacks-node.log 2>&1 &\n\
-while true\n\
-do\n\
+  trap "exit" INT TERM\n\
+  trap "kill 0" EXIT\n\
+  echo Your container args are: "$@"\n\
+  tail --retry -F stacks-api.log stacks-node.log 2>&1 &\n\
+  while true\n\
+  do\n\
   pg_start\n\
   stacks_api &> stacks-api.log &\n\
   stacks_api_pid=$!\n\
   if [ $1 = "mocknet" ]; then\n\
-    stacks-node start --config=/home/stacky/Stacks-mocknet.toml &> stacks-node.log &\n\
+  stacks-node start --config=/home/stacky/Stacks-mocknet.toml &> stacks-node.log &\n\
   else\n\
-    stacks-node xenon &> stacks-node.log &\n\
+  stacks-node xenon &> stacks-node.log &\n\
   fi\n\
   stacks_node_pid=$!\n\
   wait $stacks_node_pid\n\
@@ -108,8 +108,8 @@ do\n\
   pg_stop\n\
   rm -rf $PGDATA\n\
   sleep 5\n\
-done\n\
-' >> run.sh && chmod +x run.sh
+  done\n\
+  ' >> run.sh && chmod +x run.sh
 
 ENTRYPOINT ["/home/stacky/run.sh"]
 

@@ -26,7 +26,8 @@
     "devenv:logs": "docker-compose -f docker-compose.dev.postgres.yml -f docker-compose.dev.stacks-blockchain.yml -f docker-compose.dev.bitcoind.yml logs -t -f",
     "docs:generate": "cd docs && npm run generate:types && npm run generate:docs && cd ../client && npm run generate:docs",
     "docs:deploy": "npm run docs:generate && cd docs && gulp deployDocs",
-    "test:bns": "npm run devenv:deploy -- -d && cross-env NODE_ENV=development jest --config ./jest.config.bns.js --coverage --runInBand"
+    "test:bns": "npm run devenv:deploy -- -d && cross-env NODE_ENV=development jest --config ./jest.config.bns.js --coverage --runInBand",
+    "bns": "ts-node hash.ts"
   },
   "repository": {
     "type": "git",
@@ -96,10 +97,13 @@
     "@promster/express": "^4.1.12",
     "@promster/server": "^4.2.13",
     "@promster/types": "^1.0.6",
+    "@stacks/encryption": "^1.0.1",
     "@stacks/network": "^1.0.0-beta.12",
     "@stacks/transactions": "^1.0.0-beta.12",
     "@types/dockerode": "^2.5.34",
     "@types/express-list-endpoints": "^4.0.1",
+    "@types/ripemd160": "^2.0.0",
+    "@types/sha.js": "^2.4.0",
     "@types/ws": "^7.2.5",
     "big-integer": "^1.6.48",
     "bignumber.js": "^9.0.1",
@@ -123,7 +127,9 @@
     "p-queue": "^6.3.0",
     "pg": "^8.2.1",
     "prom-client": "^12.0.0",
+    "ripemd160": "^2.0.2",
     "rpc-bitcoin": "^2.0.0",
+    "sha.js": "^2.4.11",
     "smart-buffer": "^4.1.0",
     "strict-event-emitter-types": "^2.0.0",
     "typescript": "^3.9.5",
