@@ -1886,7 +1886,7 @@ describe('Rosetta API', () => {
             curve_type: 'secp256k1',
           },
           signature_type: 'ecdsa_recovery',
-          hex_bytes: signature.data.slice(2) + signature.data.slice(0, 2),
+          hex_bytes: signature.data,
         },
       ],
     };
