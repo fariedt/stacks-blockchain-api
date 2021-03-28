@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>GetTotalStxSupplyRequest | @stacks/blockchain-api-client</title>
+	<title>GetStxSupplyResponse | @stacks/blockchain-api-client</title>
 	<meta name="description" content="Documentation for @stacks/blockchain-api-client">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -56,21 +56,35 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="gettotalstxsupplyrequest.html">GetTotalStxSupplyRequest</a>
+					<a href="getstxsupplyresponse.html">GetStxSupplyResponse</a>
 				</li>
 			</ul>
-			<h1>Interface GetTotalStxSupplyRequest</h1>
+			<h1>Interface GetStxSupplyResponse</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>GET request that returns network target block times</p>
+					</div>
+					<dl class="tsd-comment-tags">
+						<dt>export</dt>
+						<dd></dd>
+						<dt>interface</dt>
+						<dd><p>GetStxSupplyResponse</p>
+						</dd>
+					</dl>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">GetTotalStxSupplyRequest</span>
+						<span class="target">GetStxSupplyResponse</span>
 					</li>
 				</ul>
 			</section>
@@ -81,7 +95,10 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="gettotalstxsupplyrequest.html#height" class="tsd-kind-icon">height</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="getstxsupplyresponse.html#block_height" class="tsd-kind-icon">block_<wbr>height</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="getstxsupplyresponse.html#total_stx" class="tsd-kind-icon">total_<wbr>stx</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="getstxsupplyresponse.html#unlocked_percent" class="tsd-kind-icon">unlocked_<wbr>percent</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="getstxsupplyresponse.html#unlocked_stx" class="tsd-kind-icon">unlocked_<wbr>stx</a></li>
 							</ul>
 						</section>
 					</div>
@@ -90,14 +107,84 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="height" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> height</h3>
-					<div class="tsd-signature tsd-kind-icon">height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
+					<a name="block_height" class="tsd-anchor"></a>
+					<h3>block_<wbr>height</h3>
+					<div class="tsd-signature tsd-kind-icon">block_<wbr>height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/fariedt/stacks-blockchain-api/blob/98404b4/client/src/generated/apis/InfoApi.ts#L43">src/generated/apis/InfoApi.ts:43</a></li>
+							<li>Defined in src/generated/models/GetStxSupplyResponse.ts:45</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The block height at which this information was queried</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>memberof</dt>
+							<dd><p>GetStxSupplyResponse</p>
+							</dd>
+						</dl>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="total_stx" class="tsd-anchor"></a>
+					<h3>total_<wbr>stx</h3>
+					<div class="tsd-signature tsd-kind-icon">total_<wbr>stx<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in src/generated/models/GetStxSupplyResponse.ts:33</li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>String quoted decimal number of the total possible number of STX</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>memberof</dt>
+							<dd><p>GetStxSupplyResponse</p>
+							</dd>
+						</dl>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="unlocked_percent" class="tsd-anchor"></a>
+					<h3>unlocked_<wbr>percent</h3>
+					<div class="tsd-signature tsd-kind-icon">unlocked_<wbr>percent<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in src/generated/models/GetStxSupplyResponse.ts:27</li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>String quoted decimal number of the percentage of STX that have unlocked</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>memberof</dt>
+							<dd><p>GetStxSupplyResponse</p>
+							</dd>
+						</dl>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="unlocked_stx" class="tsd-anchor"></a>
+					<h3>unlocked_<wbr>stx</h3>
+					<div class="tsd-signature tsd-kind-icon">unlocked_<wbr>stx<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in src/generated/models/GetStxSupplyResponse.ts:39</li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>String quoted decimal number of the STX that have been mined or unlocked</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>memberof</dt>
+							<dd><p>GetStxSupplyResponse</p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -114,10 +201,19 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface">
-						<a href="gettotalstxsupplyrequest.html" class="tsd-kind-icon">Get<wbr>Total<wbr>Stx<wbr>Supply<wbr>Request</a>
+						<a href="getstxsupplyresponse.html" class="tsd-kind-icon">Get<wbr>Stx<wbr>Supply<wbr>Response</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="gettotalstxsupplyrequest.html#height" class="tsd-kind-icon">height</a>
+								<a href="getstxsupplyresponse.html#block_height" class="tsd-kind-icon">block_<wbr>height</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="getstxsupplyresponse.html#total_stx" class="tsd-kind-icon">total_<wbr>stx</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="getstxsupplyresponse.html#unlocked_percent" class="tsd-kind-icon">unlocked_<wbr>percent</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="getstxsupplyresponse.html#unlocked_stx" class="tsd-kind-icon">unlocked_<wbr>stx</a>
 							</li>
 						</ul>
 					</li>
