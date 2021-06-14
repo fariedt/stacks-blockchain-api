@@ -32,6 +32,7 @@ import { createBnsNamespacesRouter } from './routes/bns/namespaces';
 import { createBnsPriceRouter } from './routes/bns/pricing';
 import { createBnsNamesRouter } from './routes/bns/names';
 import { createBnsAddressesRouter } from './routes/bns/addresses';
+import { createIntegrationRouter } from './routes/integration';
 
 import { ChainID } from '@stacks/transactions';
 
@@ -126,6 +127,7 @@ export async function startApiServer(datastore: DataStore, chainId: ChainID): Pr
       router.use('/debug', createDebugRouter(datastore));
       router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       router.use('/faucets', createFaucetRouter(datastore));
+      router.use('/integration', createIntegrationRouter( chainId ));
       return router;
     })()
   );

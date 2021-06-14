@@ -64,6 +64,7 @@ import {
 } from '../bns-constants';
 
 import * as zoneFileParser from 'zone-file';
+import { executeChainlinkInitiator, isOracleContract } from '../integration-helper';
 
 async function handleBurnBlockMessage(
   burnBlockMsg: CoreNodeBurnBlockMessage,
@@ -226,6 +227,30 @@ async function handleClientMessage(
       namespaces: [],
       subdomains: [],
     };
+    /*if (tx.parsed_tx.payload.typeId === TransactionPayloadTypeID.ContractCall) {
+      const payload = tx.parsed_tx.payload;
+      const address = c32address(
+        payload.address.version,
+        payload.address.bytes.toString('hex')
+      );
+
+      const contract_call_data = JSON.stringify(tx.parsed_tx.payload.functionArgs);
+      logger.verbose(
+        `Sajjad -> contract-call: ${address}.${payload.contractName}.${payload.functionName}`
+      );
+      // logger.verbose(`Sajjad -> contract-call-args: ${contract_call_data}\n`);
+      console.log(tx.parsed_tx.payload.functionArgs);
+      if (payload.contractName === 'oracle' && payload.functionName === 'oracle-request') {
+        // call initiator
+        executeChainlinkInitiator(
+          tx.core_tx.txid,
+          address,
+          payload.contractName,
+          payload.functionName
+        );
+      }
+    }*/
+
     if (tx.parsed_tx.payload.typeId === TransactionPayloadTypeID.SmartContract) {
       const contractId = `${tx.sender_address}.${tx.parsed_tx.payload.name}`;
       dbData.txs[i].smartContracts.push({
@@ -267,6 +292,12 @@ async function handleClientMessage(
           value: hexToBuffer(event.contract_event.raw_value),
         };
         dbTx.contractLogEvents.push(entry);
+        if (
+          isOracleContract(event.contract_event.contract_identifier) &&
+          event.contract_event.topic === printTopic
+        ) {
+          const _ = executeChainlinkInitiator(event.contract_event.raw_value);
+        }
         if (
           event.contract_event.topic === printTopic &&
           (event.contract_event.contract_identifier === BnsContractIdentifier.mainnet ||

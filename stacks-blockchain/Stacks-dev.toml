@@ -27,3 +27,9 @@ amount = 10000000000000000
 address = "STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64CP"
 amount = 10000000000000000
 # secretKey = "e75dcb66f84287eaf347955e94fa04337298dbd95aa0dbb985771104ef1913db01"
+
+[[mstx_balance]]
+address = "ST248M2G9DF9G5CX42C31DG04B3H47VJK6W73JDNC"
+amount = 10000000000000000
+# secretKey = "4773c54317d082ff5cce3976e6a2a1b691f65ab82ec59e98fe97460a922019ee01"
+# mnemonic = "elevator pulse copper license toilet kid city render can useful below toward collect employ credit nice carpet hello family wool bicycle unique fire spider"
