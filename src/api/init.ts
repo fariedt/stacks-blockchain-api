@@ -127,7 +127,7 @@ export async function startApiServer(datastore: DataStore, chainId: ChainID): Pr
       router.use('/debug', createDebugRouter(datastore));
       router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       router.use('/faucets', createFaucetRouter(datastore));
-      router.use('/integration', createIntegrationRouter( chainId ));
+      router.use('/integration', createIntegrationRouter(chainId));
       return router;
     })()
   );
