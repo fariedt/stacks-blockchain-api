@@ -100,10 +100,9 @@ export async function createOracleFulfillmentTx(
   linkFulfillment: ChainlinkFulfillmentResponse,
   chainId: ChainID
 ): Promise<StacksTransaction> {
-  const oraclePaymentKey = '4773c54317d082ff5cce3976e6a2a1b691f65ab82ec59e98fe97460a922019ee01';
   const oracle = getOracleContract(chainId);
   const oracleFulfillmenatFunction = 'fullfill-oracle-request';
-  // const oraclePaymentKey = process.env.ORACLE_PAYMENT_KEY;
+  const oraclePaymentKey = String(process.env.ORACLE_PAYMENT_KEY);
   const network = new StacksMocknet();
   const fulfillment = linkFulfillment.fulfillment;
   const txOptions: SignedContractCallOptions = {
